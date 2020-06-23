@@ -1,0 +1,66 @@
+syntax = "proto3";
+import "admin/role.proto";
+import "unified.proto";
+package admin;
+option go_package = "github.com/ops-cn/go-devops/proto/admin";
+
+service login {
+  rpc GetCaptcha (Length) returns(unified.Response) {}
+  rpc ResCaptcha (LoginCaptcha) returns(unified.Response) {}
+  rpc Verify (LoginParam) returns(unified.Response) {}
+  rpc GenerateToken (UserLoginInfo) returns(unified.Response) {}
+  rpc DestroyToken (LoginTokenInfo) returns(unified.Response) {}
+  rpc checkAndGetUser (UserLoginInfo) returns(unified.Response) {}
+  rpc GetLoginInfo (UserLoginInfo) returns(unified.Response) {}
+  rpc QueryUserMenuTree (UserLoginInfo) returns(unified.Response) {}
+  rpc UpdatePassword(UpdatePasswordParam)returns(unified.Response) {}
+}
+
+message Length {
+  int32 Length = 1;
+}
+message LoginParam {
+  // @inject_tag: valid:"user_name"
+  string UserName = 1;
+  string Password = 2;
+  // @inject_tag: valid:"captcha_id"
+  string CaptchaID = 3;
+  // @inject_tag: valid:"captcha_code"
+  string CaptchaCode = 4;
+}
+
+message UserLoginInfo {
+  // @inject_tag: valid:"user_id"
+  string UserID = 1;
+  // @inject_tag: valid:"user_name"
+  string UserName = 2;
+  // @inject_tag: valid:"real_name"
+  string RealName = 3;
+
+  repeated Role Roles = 4;
+}
+
+message UpdatePasswordParam {
+  // @inject_tag: valid:"user_id"
+  string UserID = 1;
+  // @inject_tag: valid:"old_password"
+  string OldPassword = 2;
+  // @inject_tag: valid:"new_password"
+  string NewPassword = 3;
+}
+
+message LoginCaptcha {
+  // @inject_tag: valid:"captcha_id"
+  string CaptchaID = 1;
+  int32 width = 2;
+  int32 height = 3;
+}
+
+message LoginTokenInfo {
+  // @inject_tag: valid:"access_token"
+  string AccessToken = 1;
+  // @inject_tag: valid:"token_type"
+  string TokenType = 2;
+  // @inject_tag: valid:"expires_at"
+  int64 ExpiresAt = 3;
+}

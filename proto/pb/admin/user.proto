@@ -1,0 +1,32 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+option go_package = "github.com/ops-cn/go-devops/proto/admin";
+package admin;
+
+message User {
+  string ID = 1;
+  // @inject_tag: valid:"user_name"
+  string UserName = 2;
+  // @inject_tag: valid:"real_name"
+  string RealName = 3;
+  string Password = 4;
+  string Phone = 5;
+  string Email = 6;
+  int32 Status = 7;
+  string Creator = 8;
+  // @inject_tag: valid:"created_at"
+  google.protobuf.Timestamp CreatedAt = 9;
+  repeated UserRole UserRoles = 10;
+}
+
+message UserRole {
+  string ID = 1;
+  // @inject_tag: valid:"user_id"
+  string UserID =2;
+  // @inject_tag: valid:"role_id"
+  string RoleID =3;
+}
+
+message UserQueryParam {
+
+}

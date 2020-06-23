@@ -1,0 +1,47 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+import "unified.proto";
+option go_package = "github.com/ops-cn/go-devops/proto/admin";
+package admin;
+
+message Menu {
+  string ID = 1;
+  string Name = 2;
+  int32 Sequence = 3;
+  string Icon = 4;
+  string Router = 5;
+  string ParentPath = 6;
+  int32 ShowStatus = 7;
+  int32 Status = 8;
+  string Memo = 9;
+  string Creator = 10;
+  // @inject_tag: valid:"created_at"
+  google.protobuf.Timestamp CreatedAt = 11;
+  // @inject_tag: valid:"updated_at"
+  google.protobuf.Timestamp UpdatedAt = 12;
+  repeated  MenuAction Actions = 13;
+}
+message MenuAction {
+  string ID = 1;
+  string MenuID = 2;
+  string Code = 3;
+  string Name = 4;
+  repeated MenuActionResource Resources = 5;
+}
+message MenuActionResource {
+  string ID = 1;
+  string ActionID = 2;
+  string Method = 3;
+  string Path = 4;
+}
+
+message MenuQueryParam {
+  unified.PaginationParam PaginationParam = 1;
+  repeated string IDs = 2;
+  string Name = 3;
+  string PrefixParentPath = 4;
+  string QueryValue = 5;
+  string ParentID = 6;
+  int32 ShowStatus = 7;
+  int32 Status = 8;
+}
