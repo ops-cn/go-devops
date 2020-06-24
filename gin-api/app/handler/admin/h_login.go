@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/google/wire"
@@ -30,6 +31,7 @@ func (a *Login) GetCaptcha(c *gin.Context) {
 		ginplus.ResError(c, err)
 		return
 	}
+	logger.Printf(ctx, item.CaptchaID)
 	ginplus.ResSuccess(c, item)
 }
 
@@ -64,16 +66,17 @@ func (a *Login) Login(c *gin.Context) {
 		ginplus.ResError(c, err)
 		return
 	}
-
-	if !captcha.VerifyString(item.CaptchaID, item.CaptchaCode) {
+	logger.Printf(ctx, item.UserName)
+	/*if !captcha.VerifyString(item.CaptchaID, item.CaptchaCode) {
 		ginplus.ResError(c, errors.New400Response("无效的验证码"))
 		return
-	}
+	}*/
 	param := &proto.LoginParam{
 		UserName: item.UserName,
 		Password: item.Password,
 	}
 	rsp, err := loginClient.Verify(ctx, param)
+	fmt.Print(rsp)
 	user := &proto.User{}
 	ptypes.UnmarshalAny(rsp.Items, user)
 	//user, err := a.LoginBll.Verify(ctx, item.UserName, item.Password)

@@ -5,6 +5,7 @@ import (
 	"github.com/google/wire"
 	"github.com/ops-cn/go-devops/common/ginplus"
 	"github.com/ops-cn/go-devops/common/schema"
+	"github.com/ops-cn/go-devops/gin-api/app/service/admin"
 )
 
 // RoleSet 注入Role
@@ -12,6 +13,7 @@ var RoleSet = wire.NewSet(wire.Struct(new(Role), "*"))
 
 // Role 角色管理
 type Role struct {
+	RoleBll admin.IRole
 }
 
 // Query 查询数据

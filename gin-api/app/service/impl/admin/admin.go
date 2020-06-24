@@ -2,8 +2,8 @@ package admin
 
 import "github.com/google/wire"
 
-// BllSet bll注入
-var BllSet = wire.NewSet(
+// ServiceSet 注入
+var ServiceSet = wire.NewSet(
 	LoginSet,
 	MenuSet,
 	RoleSet,

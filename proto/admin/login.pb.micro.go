@@ -43,15 +43,9 @@ func NewLoginEndpoints() []*api.Endpoint {
 // Client API for Login service
 
 type LoginService interface {
-	GetCaptcha(ctx context.Context, in *Length, opts ...client.CallOption) (*unified.Response, error)
-	ResCaptcha(ctx context.Context, in *LoginCaptcha, opts ...client.CallOption) (*unified.Response, error)
+	//  rpc GetCaptcha (Length) returns(unified.Response) {}
+	//  rpc ResCaptcha (LoginCaptcha) returns(unified.Response) {}
 	Verify(ctx context.Context, in *LoginParam, opts ...client.CallOption) (*unified.Response, error)
-	GenerateToken(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error)
-	DestroyToken(ctx context.Context, in *LoginTokenInfo, opts ...client.CallOption) (*unified.Response, error)
-	CheckAndGetUser(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error)
-	GetLoginInfo(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error)
-	QueryUserMenuTree(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error)
-	UpdatePassword(ctx context.Context, in *UpdatePasswordParam, opts ...client.CallOption) (*unified.Response, error)
 }
 
 type loginService struct {
@@ -66,88 +60,8 @@ func NewLoginService(name string, c client.Client) LoginService {
 	}
 }
 
-func (c *loginService) GetCaptcha(ctx context.Context, in *Length, opts ...client.CallOption) (*unified.Response, error) {
-	req := c.c.NewRequest(c.name, "Login.GetCaptcha", in)
-	out := new(unified.Response)
-	err := c.c.Call(ctx, req, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *loginService) ResCaptcha(ctx context.Context, in *LoginCaptcha, opts ...client.CallOption) (*unified.Response, error) {
-	req := c.c.NewRequest(c.name, "Login.ResCaptcha", in)
-	out := new(unified.Response)
-	err := c.c.Call(ctx, req, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *loginService) Verify(ctx context.Context, in *LoginParam, opts ...client.CallOption) (*unified.Response, error) {
 	req := c.c.NewRequest(c.name, "Login.Verify", in)
-	out := new(unified.Response)
-	err := c.c.Call(ctx, req, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *loginService) GenerateToken(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error) {
-	req := c.c.NewRequest(c.name, "Login.GenerateToken", in)
-	out := new(unified.Response)
-	err := c.c.Call(ctx, req, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *loginService) DestroyToken(ctx context.Context, in *LoginTokenInfo, opts ...client.CallOption) (*unified.Response, error) {
-	req := c.c.NewRequest(c.name, "Login.DestroyToken", in)
-	out := new(unified.Response)
-	err := c.c.Call(ctx, req, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *loginService) CheckAndGetUser(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error) {
-	req := c.c.NewRequest(c.name, "Login.checkAndGetUser", in)
-	out := new(unified.Response)
-	err := c.c.Call(ctx, req, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *loginService) GetLoginInfo(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error) {
-	req := c.c.NewRequest(c.name, "Login.GetLoginInfo", in)
-	out := new(unified.Response)
-	err := c.c.Call(ctx, req, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *loginService) QueryUserMenuTree(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error) {
-	req := c.c.NewRequest(c.name, "Login.QueryUserMenuTree", in)
-	out := new(unified.Response)
-	err := c.c.Call(ctx, req, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *loginService) UpdatePassword(ctx context.Context, in *UpdatePasswordParam, opts ...client.CallOption) (*unified.Response, error) {
-	req := c.c.NewRequest(c.name, "Login.UpdatePassword", in)
 	out := new(unified.Response)
 	err := c.c.Call(ctx, req, out, opts...)
 	if err != nil {
@@ -159,28 +73,14 @@ func (c *loginService) UpdatePassword(ctx context.Context, in *UpdatePasswordPar
 // Server API for Login service
 
 type LoginHandler interface {
-	GetCaptcha(context.Context, *Length, *unified.Response) error
-	ResCaptcha(context.Context, *LoginCaptcha, *unified.Response) error
+	//  rpc GetCaptcha (Length) returns(unified.Response) {}
+	//  rpc ResCaptcha (LoginCaptcha) returns(unified.Response) {}
 	Verify(context.Context, *LoginParam, *unified.Response) error
-	GenerateToken(context.Context, *UserLoginInfo, *unified.Response) error
-	DestroyToken(context.Context, *LoginTokenInfo, *unified.Response) error
-	CheckAndGetUser(context.Context, *UserLoginInfo, *unified.Response) error
-	GetLoginInfo(context.Context, *UserLoginInfo, *unified.Response) error
-	QueryUserMenuTree(context.Context, *UserLoginInfo, *unified.Response) error
-	UpdatePassword(context.Context, *UpdatePasswordParam, *unified.Response) error
 }
 
 func RegisterLoginHandler(s server.Server, hdlr LoginHandler, opts ...server.HandlerOption) error {
 	type login interface {
-		GetCaptcha(ctx context.Context, in *Length, out *unified.Response) error
-		ResCaptcha(ctx context.Context, in *LoginCaptcha, out *unified.Response) error
 		Verify(ctx context.Context, in *LoginParam, out *unified.Response) error
-		GenerateToken(ctx context.Context, in *UserLoginInfo, out *unified.Response) error
-		DestroyToken(ctx context.Context, in *LoginTokenInfo, out *unified.Response) error
-		CheckAndGetUser(ctx context.Context, in *UserLoginInfo, out *unified.Response) error
-		GetLoginInfo(ctx context.Context, in *UserLoginInfo, out *unified.Response) error
-		QueryUserMenuTree(ctx context.Context, in *UserLoginInfo, out *unified.Response) error
-		UpdatePassword(ctx context.Context, in *UpdatePasswordParam, out *unified.Response) error
 	}
 	type Login struct {
 		login
@@ -193,38 +93,6 @@ type loginHandler struct {
 	LoginHandler
 }
 
-func (h *loginHandler) GetCaptcha(ctx context.Context, in *Length, out *unified.Response) error {
-	return h.LoginHandler.GetCaptcha(ctx, in, out)
-}
-
-func (h *loginHandler) ResCaptcha(ctx context.Context, in *LoginCaptcha, out *unified.Response) error {
-	return h.LoginHandler.ResCaptcha(ctx, in, out)
-}
-
 func (h *loginHandler) Verify(ctx context.Context, in *LoginParam, out *unified.Response) error {
 	return h.LoginHandler.Verify(ctx, in, out)
-}
-
-func (h *loginHandler) GenerateToken(ctx context.Context, in *UserLoginInfo, out *unified.Response) error {
-	return h.LoginHandler.GenerateToken(ctx, in, out)
-}
-
-func (h *loginHandler) DestroyToken(ctx context.Context, in *LoginTokenInfo, out *unified.Response) error {
-	return h.LoginHandler.DestroyToken(ctx, in, out)
-}
-
-func (h *loginHandler) CheckAndGetUser(ctx context.Context, in *UserLoginInfo, out *unified.Response) error {
-	return h.LoginHandler.CheckAndGetUser(ctx, in, out)
-}
-
-func (h *loginHandler) GetLoginInfo(ctx context.Context, in *UserLoginInfo, out *unified.Response) error {
-	return h.LoginHandler.GetLoginInfo(ctx, in, out)
-}
-
-func (h *loginHandler) QueryUserMenuTree(ctx context.Context, in *UserLoginInfo, out *unified.Response) error {
-	return h.LoginHandler.QueryUserMenuTree(ctx, in, out)
-}
-
-func (h *loginHandler) UpdatePassword(ctx context.Context, in *UpdatePasswordParam, out *unified.Response) error {
-	return h.LoginHandler.UpdatePassword(ctx, in, out)
 }

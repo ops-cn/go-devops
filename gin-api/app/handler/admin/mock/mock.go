@@ -1,12 +1,14 @@
 package mock
 
-import "github.com/google/wire"
+import (
+	"github.com/google/wire"
+	"github.com/ops-cn/go-devops/gin-api/app/handler/admin"
+)
 
 // MockSet 注入mock
 var MockSet = wire.NewSet(
-	DemoSet,
 	LoginSet,
 	MenuSet,
 	RoleSet,
-	UserSet,
+	admin.UserSet,
 )

@@ -7,9 +7,9 @@
 package admin
 
 import (
-	unified "github.com/go-devops/ops-cn/proto/unified"
 	proto "github.com/golang/protobuf/proto"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
+	unified "github.com/ops-cn/go-devops/proto/unified"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

@@ -19,10 +19,10 @@ import (
 
 //type LoginService struct{}
 
-var LoginSet = wire.NewSet(wire.Struct(new(LoginService), "*"), wire.Bind(new(bll.ILogin), new(*LoginService)))
+var LoginSet = wire.NewSet(wire.Struct(new(Login), "*"), wire.Bind(new(bll.ILogin), new(*Login)))
 
 // Login 登录管理
-type LoginService struct {
+type Login struct {
 	Auth            auth.Auther
 	UserModel       model.IUser
 	UserRoleModel   model.IUserRole
@@ -32,7 +32,7 @@ type LoginService struct {
 	MenuActionModel model.IMenuAction
 }
 
-func (loginService *LoginService) GetCaptcha(ctx context.Context, length int) (*schema.LoginCaptcha, error) {
+func (loginService *Login) GetCaptcha(ctx context.Context, length int) (*schema.LoginCaptcha, error) {
 	captchaID := captcha.NewLen(length)
 	item := &schema.LoginCaptcha{
 		CaptchaID: captchaID,
@@ -41,7 +41,7 @@ func (loginService *LoginService) GetCaptcha(ctx context.Context, length int) (*
 }
 
 // Verify 登录验证
-func (loginService *LoginService) Verify(ctx context.Context, req *proto.LoginParam, res *unified.Response) error {
+func (loginService *Login) Verify(ctx context.Context, req *proto.LoginParam, res *unified.Response) error {
 	// 检查是否是超级用户
 	root := schema.GetRootUser()
 	user := &proto.User{}
@@ -72,7 +72,7 @@ func (loginService *LoginService) Verify(ctx context.Context, req *proto.LoginPa
 }
 
 // GenerateToken 生成令牌
-func (loginService *LoginService) GenerateToken(ctx context.Context, userID string) (*schema.LoginTokenInfo, error) {
+func (loginService *Login) GenerateToken(ctx context.Context, userID string) (*schema.LoginTokenInfo, error) {
 	tokenInfo, err := loginService.Auth.GenerateToken(ctx, userID)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -87,7 +87,7 @@ func (loginService *LoginService) GenerateToken(ctx context.Context, userID stri
 }
 
 // DestroyToken 销毁令牌
-func (loginService *LoginService) DestroyToken(ctx context.Context, tokenString string) error {
+func (loginService *Login) DestroyToken(ctx context.Context, tokenString string) error {
 	err := loginService.Auth.DestroyToken(ctx, tokenString)
 	if err != nil {
 		return errors.WithStack(err)
@@ -95,7 +95,7 @@ func (loginService *LoginService) DestroyToken(ctx context.Context, tokenString 
 	return nil
 }
 
-func (loginService *LoginService) CheckAndGetUser(ctx context.Context, req *proto.UserLoginInfo, res *unified.Response) error {
+func (loginService *Login) CheckAndGetUser(ctx context.Context, req *proto.UserLoginInfo, res *unified.Response) error {
 	item, err := loginService.UserModel.Get(ctx, req.UserID)
 	if err != nil {
 		return err
@@ -111,7 +111,7 @@ func (loginService *LoginService) CheckAndGetUser(ctx context.Context, req *prot
 }
 
 // GetLoginInfo 获取当前用户登录信息
-func (loginService *LoginService) GetLoginInfo(ctx context.Context, req *proto.UserLoginInfo, res *unified.Response) error {
+func (loginService *Login) GetLoginInfo(ctx context.Context, req *proto.UserLoginInfo, res *unified.Response) error {
 	if isRoot := schema.CheckIsRootUser(ctx, req.UserID); isRoot {
 		root := schema.GetRootUser()
 		loginInfo := &proto.UserLoginInfo{
@@ -163,7 +163,7 @@ func (loginService *LoginService) GetLoginInfo(ctx context.Context, req *proto.U
 }
 
 // QueryUserMenuTree 查询当前用户的权限菜单树
-func (loginService *LoginService) QueryUserMenuTree(ctx context.Context, req *proto.UserLoginInfo, res *unified.Response) error {
+func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.UserLoginInfo, res *unified.Response) error {
 	isRoot := schema.CheckIsRootUser(ctx, req.UserID)
 	// 如果是root用户，则查询所有显示的菜单树
 	if isRoot {
@@ -242,7 +242,7 @@ func (loginService *LoginService) QueryUserMenuTree(ctx context.Context, req *pr
 }
 
 // UpdatePassword 更新当前用户登录密码
-func (loginService *LoginService) UpdatePassword(ctx context.Context, req *proto.UpdatePasswordParam, res *unified.Response) error {
+func (loginService *Login) UpdatePassword(ctx context.Context, req *proto.UpdatePasswordParam, res *unified.Response) error {
 	if schema.CheckIsRootUser(ctx, req.UserID) {
 		return errors.New400Response("root用户不允许更新密码")
 	}

@@ -1,0 +1,1 @@
+swag init --generalInfo ./app/swagger.go --output ./app/swagger

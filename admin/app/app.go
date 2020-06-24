@@ -104,7 +104,7 @@ func Init(ctx context.Context, opts ...Option) (func(), error) {
 	InitMonitor(ctx)
 
 	// 初始化图形验证码
-	InitCaptcha()
+	//InitCaptcha()
 
 	// 初始化依赖注入器
 	injector, injectorCleanFunc, err := injector.BuildInjector()

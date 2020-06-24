@@ -21,24 +21,24 @@ func (a *Router) RegisterAPI(app *gin.Engine) {
 
 	v1 := g.Group("/v1")
 	{
-		pub := v1.Group("/pub")
-		{
-			gLogin := pub.Group("login")
-			{
-				gLogin.GET("captchaid", a.LoginAPI.GetCaptcha)
-				gLogin.GET("captcha", a.LoginAPI.ResCaptcha)
-				gLogin.POST("", a.LoginAPI.Login)
-				gLogin.POST("exit", a.LoginAPI.Logout)
-			}
-
-			gCurrent := pub.Group("current")
-			{
-				gCurrent.PUT("password", a.LoginAPI.UpdatePassword)
-				gCurrent.GET("user", a.LoginAPI.GetUserInfo)
-				gCurrent.GET("menutree", a.LoginAPI.QueryUserMenuTree)
-			}
-			pub.POST("/refresh-token", a.LoginAPI.RefreshToken)
-		}
+		//pub := v1.Group("/pub")
+		//{
+		//	gLogin := pub.Group("login")
+		//	{
+		//		//gLogin.GET("captchaid", a.LoginAPI.GetCaptcha)
+		//		//gLogin.GET("captcha", a.LoginAPI.ResCaptcha)
+		//		//gLogin.POST("", a.LoginAPI.Login)
+		//		//gLogin.POST("exit", a.LoginAPI.Logout)
+		//	}
+		//
+		//	gCurrent := pub.Group("current")
+		//	{
+		//		gCurrent.PUT("password", a.LoginAPI.UpdatePassword)
+		//		gCurrent.GET("user", a.LoginAPI.GetUserInfo)
+		//		gCurrent.GET("menutree", a.LoginAPI.QueryUserMenuTree)
+		//	}
+		//	pub.POST("/refresh-token", a.LoginAPI.RefreshToken)
+		//}
 
 		gDemo := v1.Group("demos")
 		{

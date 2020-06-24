@@ -2,10 +2,10 @@ package injector
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/ops-cn/go-devops/admin/app/middleware"
-	"github.com/ops-cn/go-devops/admin/app/router"
 	"github.com/ops-cn/go-devops/common/config"
 	"github.com/ops-cn/go-devops/common/thirdparty/gzip"
+	"github.com/ops-cn/go-devops/gin-api/app/middleware"
+	"github.com/ops-cn/go-devops/gin-api/app/router"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	swaggerFiles "github.com/swaggo/gin-swagger/swaggerFiles"
 )

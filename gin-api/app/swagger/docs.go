@@ -28,341 +28,6 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/demos": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "tags": [
-                    "Demo"
-                ],
-                "summary": "查询数据",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "分页索引",
-                        "name": "current",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "分页大小",
-                        "name": "pageSize",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "查询值",
-                        "name": "queryValue",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "查询结果：{list:列表数据,pagination:{current:页索引,pageSize:页大小,total:总数量}}",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/schema.Demo"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "{error:{code:0,message:未授权}}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResult"
-                        }
-                    },
-                    "500": {
-                        "description": "{error:{code:0,message:服务器错误}}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResult"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "tags": [
-                    "Demo"
-                ],
-                "summary": "创建数据",
-                "parameters": [
-                    {
-                        "description": "创建数据",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/schema.Demo"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/schema.IDResult"
-                        }
-                    },
-                    "400": {
-                        "description": "{error:{code:0,message:无效的请求参数}}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResult"
-                        }
-                    },
-                    "401": {
-                        "description": "{error:{code:0,message:未授权}}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResult"
-                        }
-                    },
-                    "500": {
-                        "description": "{error:{code:0,message:服务器错误}}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResult"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/demos/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "tags": [
-                    "Demo"
-                ],
-                "summary": "查询指定数据",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "唯一标识",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/schema.Demo"
-                        }
-                    },
-                    "401": {
-                        "description": "{error:{code:0,message:未授权}}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResult"
-                        }
-                    },
-                    "404": {
-                        "description": "{error:{code:0,message:资源不存在}}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResult"
-                        }
-                    },
-                    "500": {
-                        "description": "{error:{code:0,message:服务器错误}}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResult"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "tags": [
-                    "Demo"
-                ],
-                "summary": "更新数据",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "唯一标识",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "更新数据",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/schema.Demo"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{status:OK}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.StatusResult"
-                        }
-                    },
-                    "400": {
-                        "description": "{error:{code:0,message:无效的请求参数}}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResult"
-                        }
-                    },
-                    "401": {
-                        "description": "{error:{code:0,message:未授权}}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResult"
-                        }
-                    },
-                    "500": {
-                        "description": "{error:{code:0,message:服务器错误}}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResult"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "tags": [
-                    "Demo"
-                ],
-                "summary": "删除数据",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "唯一标识",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{status:OK}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.StatusResult"
-                        }
-                    },
-                    "401": {
-                        "description": "{error:{code:0,message:未授权}}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResult"
-                        }
-                    },
-                    "500": {
-                        "description": "{error:{code:0,message:服务器错误}}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResult"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/demos/{id}/disable": {
-            "patch": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "tags": [
-                    "Demo"
-                ],
-                "summary": "禁用数据",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "唯一标识",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{status:OK}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.StatusResult"
-                        }
-                    },
-                    "401": {
-                        "description": "{error:{code:0,message:未授权}}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResult"
-                        }
-                    },
-                    "500": {
-                        "description": "{error:{code:0,message:服务器错误}}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResult"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/demos/{id}/enable": {
-            "patch": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "tags": [
-                    "Demo"
-                ],
-                "summary": "启用数据",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "唯一标识",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "{status:OK}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.StatusResult"
-                        }
-                    },
-                    "401": {
-                        "description": "{error:{code:0,message:未授权}}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResult"
-                        }
-                    },
-                    "500": {
-                        "description": "{error:{code:0,message:服务器错误}}",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResult"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/menus": {
             "get": {
                 "security": [
@@ -1775,68 +1440,11 @@ var doc = `{
         }
     },
     "definitions": {
-        "schema.Demo": {
-            "type": "object",
-            "required": [
-                "code",
-                "name",
-                "status"
-            ],
-            "properties": {
-                "code": {
-                    "description": "编号",
-                    "type": "string"
-                },
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string"
-                },
-                "creator": {
-                    "description": "创建者",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "唯一标识",
-                    "type": "string"
-                },
-                "memo": {
-                    "description": "备注",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "状态(1:启用 2:停用)",
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string"
-                }
-            }
-        },
-        "schema.ErrorItem": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "错误码",
-                    "type": "integer"
-                },
-                "message": {
-                    "description": "错误信息",
-                    "type": "string"
-                }
-            }
-        },
         "schema.ErrorResult": {
             "type": "object",
             "properties": {
                 "error": {
-                    "description": "错误项",
-                    "type": "object",
-                    "$ref": "#/definitions/schema.ErrorItem"
+                    "type": "ErrorItem"
                 }
             }
         },
@@ -1852,7 +1460,6 @@ var doc = `{
             "type": "object",
             "properties": {
                 "captcha_id": {
-                    "description": "验证码ID",
                     "type": "string"
                 }
             }
@@ -1867,19 +1474,15 @@ var doc = `{
             ],
             "properties": {
                 "captcha_code": {
-                    "description": "验证码",
                     "type": "string"
                 },
                 "captcha_id": {
-                    "description": "验证码ID",
                     "type": "string"
                 },
                 "password": {
-                    "description": "密码(md5加密)",
                     "type": "string"
                 },
                 "user_name": {
-                    "description": "用户名",
                     "type": "string"
                 }
             }
@@ -1888,15 +1491,12 @@ var doc = `{
             "type": "object",
             "properties": {
                 "access_token": {
-                    "description": "访问令牌",
                     "type": "string"
                 },
                 "expires_at": {
-                    "description": "令牌到期时间戳",
                     "type": "integer"
                 },
                 "token_type": {
-                    "description": "令牌类型",
                     "type": "string"
                 }
             }
@@ -1910,187 +1510,85 @@ var doc = `{
             ],
             "properties": {
                 "actions": {
-                    "description": "动作列表",
-                    "type": "object",
-                    "$ref": "#/definitions/schema.MenuActions"
+                    "type": "MenuActions"
                 },
                 "created_at": {
-                    "description": "创建时间",
                     "type": "string"
                 },
                 "creator": {
-                    "description": "创建者",
                     "type": "string"
                 },
                 "icon": {
-                    "description": "菜单图标",
                     "type": "string"
                 },
                 "id": {
-                    "description": "唯一标识",
                     "type": "string"
                 },
                 "memo": {
-                    "description": "备注",
                     "type": "string"
                 },
                 "name": {
-                    "description": "菜单名称",
                     "type": "string"
                 },
                 "parent_id": {
-                    "description": "父级ID",
                     "type": "string"
                 },
                 "parent_path": {
-                    "description": "父级路径",
                     "type": "string"
                 },
                 "router": {
-                    "description": "访问路由",
                     "type": "string"
                 },
                 "sequence": {
-                    "description": "排序值",
                     "type": "integer"
                 },
                 "show_status": {
-                    "description": "显示状态(1:显示 2:隐藏)",
                     "type": "integer"
                 },
                 "status": {
-                    "description": "状态(1:启用 2:禁用)",
                     "type": "integer"
                 },
                 "updated_at": {
-                    "description": "更新时间",
                     "type": "string"
                 }
-            }
-        },
-        "schema.MenuAction": {
-            "type": "object",
-            "required": [
-                "code",
-                "menu_id",
-                "name"
-            ],
-            "properties": {
-                "code": {
-                    "description": "动作编号",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "唯一标识",
-                    "type": "string"
-                },
-                "menu_id": {
-                    "description": "菜单ID",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "动作名称",
-                    "type": "string"
-                },
-                "resources": {
-                    "description": "资源列表",
-                    "type": "object",
-                    "$ref": "#/definitions/schema.MenuActionResources"
-                }
-            }
-        },
-        "schema.MenuActionResource": {
-            "type": "object",
-            "required": [
-                "method",
-                "path"
-            ],
-            "properties": {
-                "action_id": {
-                    "description": "菜单动作ID",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "唯一标识",
-                    "type": "string"
-                },
-                "method": {
-                    "description": "资源请求方式(支持正则)",
-                    "type": "string"
-                },
-                "path": {
-                    "description": "资源请求路径（支持/:id匹配）",
-                    "type": "string"
-                }
-            }
-        },
-        "schema.MenuActionResources": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/schema.MenuActionResource"
-            }
-        },
-        "schema.MenuActions": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/schema.MenuAction"
             }
         },
         "schema.MenuTree": {
             "type": "object",
             "properties": {
                 "actions": {
-                    "description": "动作列表",
-                    "type": "object",
-                    "$ref": "#/definitions/schema.MenuActions"
+                    "type": "MenuActions"
                 },
                 "children": {
-                    "description": "子级树",
-                    "type": "object",
-                    "$ref": "#/definitions/schema.MenuTrees"
+                    "type": "MenuTrees"
                 },
                 "icon": {
-                    "description": "菜单图标",
                     "type": "string"
                 },
                 "id": {
-                    "description": "唯一标识",
                     "type": "string"
                 },
                 "name": {
-                    "description": "菜单名称",
                     "type": "string"
                 },
                 "parent_id": {
-                    "description": "父级ID",
                     "type": "string"
                 },
                 "parent_path": {
-                    "description": "父级路径",
                     "type": "string"
                 },
                 "router": {
-                    "description": "访问路由",
                     "type": "string"
                 },
                 "sequence": {
-                    "description": "排序值",
                     "type": "integer"
                 },
                 "show_status": {
-                    "description": "显示状态(1:显示 2:隐藏)",
                     "type": "integer"
                 },
                 "status": {
-                    "description": "状态(1:启用 2:禁用)",
                     "type": "integer"
                 }
-            }
-        },
-        "schema.MenuTrees": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/schema.MenuTree"
             }
         },
         "schema.Role": {
@@ -2102,88 +1600,39 @@ var doc = `{
             ],
             "properties": {
                 "created_at": {
-                    "description": "创建时间",
                     "type": "string"
                 },
                 "creator": {
-                    "description": "创建者",
                     "type": "string"
                 },
                 "id": {
-                    "description": "唯一标识",
                     "type": "string"
                 },
                 "memo": {
-                    "description": "备注",
                     "type": "string"
                 },
                 "name": {
-                    "description": "角色名称",
                     "type": "string"
                 },
                 "role_menus": {
-                    "description": "角色菜单列表",
-                    "type": "object",
-                    "$ref": "#/definitions/schema.RoleMenus"
+                    "type": "RoleMenus"
                 },
                 "sequence": {
-                    "description": "排序值",
                     "type": "integer"
                 },
                 "status": {
-                    "description": "状态(1:启用 2:禁用)",
                     "type": "integer"
                 },
                 "updated_at": {
-                    "description": "更新时间",
                     "type": "string"
                 }
-            }
-        },
-        "schema.RoleMenu": {
-            "type": "object",
-            "required": [
-                "action_id",
-                "menu_id",
-                "role_id"
-            ],
-            "properties": {
-                "action_id": {
-                    "description": "动作ID",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "唯一标识",
-                    "type": "string"
-                },
-                "menu_id": {
-                    "description": "菜单ID",
-                    "type": "string"
-                },
-                "role_id": {
-                    "description": "角色ID",
-                    "type": "string"
-                }
-            }
-        },
-        "schema.RoleMenus": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/schema.RoleMenu"
-            }
-        },
-        "schema.Roles": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/schema.Role"
             }
         },
         "schema.StatusResult": {
             "type": "object",
             "properties": {
                 "status": {
-                    "description": "状态(OK)",
-                    "type": "string"
+                    "type": "StatusText"
                 }
             }
         },
@@ -2195,11 +1644,9 @@ var doc = `{
             ],
             "properties": {
                 "new_password": {
-                    "description": "新密码(md5加密)",
                     "type": "string"
                 },
                 "old_password": {
-                    "description": "旧密码(md5加密)",
                     "type": "string"
                 }
             }
@@ -2214,45 +1661,34 @@ var doc = `{
             ],
             "properties": {
                 "created_at": {
-                    "description": "创建时间",
                     "type": "string"
                 },
                 "creator": {
-                    "description": "创建者",
                     "type": "string"
                 },
                 "email": {
-                    "description": "邮箱",
                     "type": "string"
                 },
                 "id": {
-                    "description": "唯一标识",
                     "type": "string"
                 },
                 "password": {
-                    "description": "密码",
                     "type": "string"
                 },
                 "phone": {
-                    "description": "手机号",
                     "type": "string"
                 },
                 "real_name": {
-                    "description": "真实姓名",
                     "type": "string"
                 },
                 "status": {
-                    "description": "用户状态(1:启用 2:停用)",
                     "type": "integer"
                 },
                 "user_name": {
-                    "description": "用户名",
                     "type": "string"
                 },
                 "user_roles": {
-                    "description": "角色授权",
-                    "type": "object",
-                    "$ref": "#/definitions/schema.UserRoles"
+                    "type": "UserRoles"
                 }
             }
         },
@@ -2260,83 +1696,47 @@ var doc = `{
             "type": "object",
             "properties": {
                 "real_name": {
-                    "description": "真实姓名",
                     "type": "string"
                 },
                 "roles": {
-                    "description": "角色列表",
-                    "type": "object",
-                    "$ref": "#/definitions/schema.Roles"
+                    "type": "Roles"
                 },
                 "user_id": {
-                    "description": "用户ID",
                     "type": "string"
                 },
                 "user_name": {
-                    "description": "用户名",
                     "type": "string"
                 }
-            }
-        },
-        "schema.UserRole": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "description": "唯一标识",
-                    "type": "string"
-                },
-                "role_id": {
-                    "description": "角色ID",
-                    "type": "string"
-                },
-                "user_id": {
-                    "description": "用户ID",
-                    "type": "string"
-                }
-            }
-        },
-        "schema.UserRoles": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/schema.UserRole"
             }
         },
         "schema.UserShow": {
             "type": "object",
             "properties": {
                 "created_at": {
-                    "description": "创建时间",
                     "type": "string"
                 },
                 "email": {
-                    "description": "邮箱",
                     "type": "string"
                 },
                 "id": {
-                    "description": "唯一标识",
                     "type": "string"
                 },
                 "phone": {
-                    "description": "手机号",
                     "type": "string"
                 },
                 "real_name": {
-                    "description": "真实姓名",
                     "type": "string"
                 },
                 "roles": {
-                    "description": "授权角色列表",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/schema.Role"
                     }
                 },
                 "status": {
-                    "description": "用户状态(1:启用 2:停用)",
                     "type": "integer"
                 },
                 "user_name": {
-                    "description": "用户名",
                     "type": "string"
                 }
             }

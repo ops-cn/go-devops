@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
 	"github.com/ops-cn/go-devops/common/auth"
-	"github.com/ops-cn/go-devops/gin-api/app/handler/admin"
+	api "github.com/ops-cn/go-devops/gin-api/app/handler/admin"
 )
 
 var _ IRouter = (*Router)(nil)

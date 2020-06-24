@@ -3,6 +3,7 @@ package mock
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
+	_ "github.com/ops-cn/go-devops/common/schema"
 )
 
 // LoginSet 注入Login

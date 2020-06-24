@@ -6,61 +6,19 @@
 package injector
 
 import (
-	"github.com/ops-cn/go-devops/admin/app/api"
 	"github.com/ops-cn/go-devops/admin/app/bll/impl/bll"
 	"github.com/ops-cn/go-devops/admin/app/model/impl/gorm/model"
-	"github.com/ops-cn/go-devops/admin/app/module/adapter"
-	"github.com/ops-cn/go-devops/admin/app/router"
 )
 
 // Injectors from wire.go:
 
 func BuildInjector() (*Injector, func(), error) {
-	auther, cleanup, err := InitAuth()
+	db, cleanup, err := InitGormDB()
 	if err != nil {
 		return nil, nil, err
 	}
-	db, cleanup2, err := InitGormDB()
-	if err != nil {
-		cleanup()
-		return nil, nil, err
-	}
-	role := &model.Role{
+	trans := &model.Trans{
 		DB: db,
-	}
-	roleMenu := &model.RoleMenu{
-		DB: db,
-	}
-	menuActionResource := &model.MenuActionResource{
-		DB: db,
-	}
-	user := &model.User{
-		DB: db,
-	}
-	userRole := &model.UserRole{
-		DB: db,
-	}
-	casbinAdapter := &adapter.CasbinAdapter{
-		RoleModel:         role,
-		RoleMenuModel:     roleMenu,
-		MenuResourceModel: menuActionResource,
-		UserModel:         user,
-		UserRoleModel:     userRole,
-	}
-	syncedEnforcer, cleanup3, err := InitCasbin(casbinAdapter)
-	if err != nil {
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
-	demo := &model.Demo{
-		DB: db,
-	}
-	bllDemo := &bll.Demo{
-		DemoModel: demo,
-	}
-	apiDemo := &api.Demo{
-		DemoBll: bllDemo,
 	}
 	menu := &model.Menu{
 		DB: db,
@@ -68,19 +26,7 @@ func BuildInjector() (*Injector, func(), error) {
 	menuAction := &model.MenuAction{
 		DB: db,
 	}
-	login := &bll.Login{
-		Auth:            auther,
-		UserModel:       user,
-		UserRoleModel:   userRole,
-		RoleModel:       role,
-		RoleMenuModel:   roleMenu,
-		MenuModel:       menu,
-		MenuActionModel: menuAction,
-	}
-	apiLogin := &api.Login{
-		LoginBll: login,
-	}
-	trans := &model.Trans{
+	menuActionResource := &model.MenuActionResource{
 		DB: db,
 	}
 	bllMenu := &bll.Menu{
@@ -89,48 +35,10 @@ func BuildInjector() (*Injector, func(), error) {
 		MenuActionModel:         menuAction,
 		MenuActionResourceModel: menuActionResource,
 	}
-	apiMenu := &api.Menu{
+	injector := &Injector{
 		MenuBll: bllMenu,
 	}
-	bllRole := &bll.Role{
-		Enforcer:      syncedEnforcer,
-		TransModel:    trans,
-		RoleModel:     role,
-		RoleMenuModel: roleMenu,
-		UserModel:     user,
-	}
-	apiRole := &api.Role{
-		RoleBll: bllRole,
-	}
-	bllUser := &bll.User{
-		Enforcer:      syncedEnforcer,
-		TransModel:    trans,
-		UserModel:     user,
-		UserRoleModel: userRole,
-		RoleModel:     role,
-	}
-	apiUser := &api.User{
-		UserBll: bllUser,
-	}
-	routerRouter := &router.Router{
-		Auth:           auther,
-		CasbinEnforcer: syncedEnforcer,
-		DemoAPI:        apiDemo,
-		LoginAPI:       apiLogin,
-		MenuAPI:        apiMenu,
-		RoleAPI:        apiRole,
-		UserAPI:        apiUser,
-	}
-	engine := InitGinEngine(routerRouter)
-	injector := &Injector{
-		Engine:         engine,
-		Auth:           auther,
-		CasbinEnforcer: syncedEnforcer,
-		MenuBll:        bllMenu,
-	}
 	return injector, func() {
-		cleanup3()
-		cleanup2()
 		cleanup()
 	}, nil
 }

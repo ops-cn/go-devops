@@ -5,9 +5,9 @@ package admin
 
 import (
 	fmt "fmt"
-	_ "github.com/go-devops/ops-cn/proto/unified"
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/golang/protobuf/ptypes/timestamp"
+	_ "github.com/ops-cn/go-devops/proto/unified"
 	math "math"
 )
 

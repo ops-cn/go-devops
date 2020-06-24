@@ -24,10 +24,10 @@ type Router struct {
 	Auth           auth.Auther
 	CasbinEnforcer *casbin.SyncedEnforcer
 	DemoAPI        *api.Demo
-	LoginAPI       *api.Login
-	MenuAPI        *api.Menu
-	RoleAPI        *api.Role
-	UserAPI        *api.User
+	//LoginAPI       *api.Login
+	MenuAPI *api.Menu
+	RoleAPI *api.Role
+	UserAPI *api.User
 }
 
 // Register 注册路由
