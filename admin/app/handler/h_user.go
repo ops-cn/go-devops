@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/casbin/casbin/v2"
 	"github.com/google/wire"
-	"github.com/ops-cn/go-devops/admin/app/bll"
 	"github.com/ops-cn/go-devops/admin/app/model"
 	"github.com/ops-cn/go-devops/common/errors"
 	"github.com/ops-cn/go-devops/common/noworker"
@@ -12,10 +11,8 @@ import (
 	"github.com/ops-cn/go-devops/common/util"
 )
 
-var _ bll.IUser = (*User)(nil)
-
 // UserSet 注入User
-var UserSet = wire.NewSet(wire.Struct(new(User), "*"), wire.Bind(new(bll.IUser), new(*User)))
+var UserSet = wire.NewSet(wire.Struct(new(User), "*"))
 
 // User 用户管理
 type User struct {

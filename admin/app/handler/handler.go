@@ -1,10 +1,9 @@
-package mock
+package handler
 
 import "github.com/google/wire"
 
-// MockSet 注入mock
-var MockSet = wire.NewSet(
-	DemoSet,
+// BllSet bll注入
+var HandlerSet = wire.NewSet(
 	LoginSet,
 	MenuSet,
 	RoleSet,

@@ -6,7 +6,8 @@ package injector
 import (
 	// "github.com/ops-cn/go-devops/admin/app/api/mock"
 	"github.com/google/wire"
-	"github.com/ops-cn/go-devops/admin/app/bll/impl/bll"
+	"github.com/ops-cn/go-devops/admin/app/handler"
+	"github.com/ops-cn/go-devops/admin/app/module/adapter"
 	// mongoModel "github.com/ops-cn/go-devops/admin/app/model/impl/mongo/model"
 	gormModel "github.com/ops-cn/go-devops/admin/app/model/impl/gorm/model"
 )
@@ -19,14 +20,15 @@ func BuildInjector() (*Injector, func(), error) {
 		gormModel.ModelSet,
 		// InitMongoDB,
 		// mongoModel.ModelSet,
-		//InitAuth,
-		//InitCasbin,
+		InitAuth,
+		InitCasbin,
 		//InitGinEngine,
-		bll.BllSet,
+		//bll.BllSet,
 		//api.APISet,
 		// mock.MockSet,
 		//router.RouterSet,
-		//adapter.CasbinAdapterSet,
+		adapter.CasbinAdapterSet,
+		handler.HandlerSet,
 		InjectorSet,
 	)
 	return new(Injector), nil, nil

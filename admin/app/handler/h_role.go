@@ -6,16 +6,13 @@ import (
 
 	"github.com/casbin/casbin/v2"
 	"github.com/google/wire"
-	"github.com/ops-cn/go-devops/admin/app/bll"
 	"github.com/ops-cn/go-devops/admin/app/model"
 	"github.com/ops-cn/go-devops/common/errors"
 	"github.com/ops-cn/go-devops/common/schema"
 )
 
-var _ bll.IRole = (*Role)(nil)
-
 // RoleSet 注入Role
-var RoleSet = wire.NewSet(wire.Struct(new(Role), "*"), wire.Bind(new(bll.IRole), new(*Role)))
+var RoleSet = wire.NewSet(wire.Struct(new(Role), "*"))
 
 // Role 角色管理
 type Role struct {

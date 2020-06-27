@@ -2,24 +2,22 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"github.com/golang/protobuf/ptypes"
 	proto "github.com/ops-cn/go-devops/proto/admin"
 	"github.com/ops-cn/go-devops/proto/unified"
 	"sort"
 
 	"github.com/google/wire"
-	"github.com/ops-cn/go-devops/admin/app/bll"
 	"github.com/ops-cn/go-devops/admin/app/model"
 	"github.com/ops-cn/go-devops/common/auth"
 	"github.com/ops-cn/go-devops/common/errors"
 	"github.com/ops-cn/go-devops/common/schema"
-	"github.com/ops-cn/go-devops/common/thirdparty/captcha"
 	"github.com/ops-cn/go-devops/common/util"
 )
 
-//type LoginService struct{}
-
-var LoginSet = wire.NewSet(wire.Struct(new(Login), "*"), wire.Bind(new(bll.ILogin), new(*Login)))
+// LoginSet 注入Login
+var LoginSet = wire.NewSet(wire.Struct(new(Login), "*"))
 
 // Login 登录管理
 type Login struct {
@@ -32,25 +30,17 @@ type Login struct {
 	MenuActionModel model.IMenuAction
 }
 
-func (loginService *Login) GetCaptcha(ctx context.Context, length int) (*schema.LoginCaptcha, error) {
-	captchaID := captcha.NewLen(length)
-	item := &schema.LoginCaptcha{
-		CaptchaID: captchaID,
-	}
-	return item, nil
-}
-
 // Verify 登录验证
 func (loginService *Login) Verify(ctx context.Context, req *proto.LoginParam, res *unified.Response) error {
 	// 检查是否是超级用户
 	root := schema.GetRootUser()
 	user := &proto.User{}
-	if req.UserName == root.UserName && root.Password == req.Password {
+	if req.UserName == root.UserName && root.Password == util.MD5HashString(req.Password) {
 		util.StructMapToStruct(&root, &user)
 		res.Items, _ = ptypes.MarshalAny(user)
 		return nil
 	}
-
+	fmt.Println(user)
 	result, err := loginService.UserModel.Query(ctx, schema.UserQueryParam{
 		UserName: req.UserName,
 	})
@@ -71,30 +61,6 @@ func (loginService *Login) Verify(ctx context.Context, req *proto.LoginParam, re
 	return nil
 }
 
-// GenerateToken 生成令牌
-func (loginService *Login) GenerateToken(ctx context.Context, userID string) (*schema.LoginTokenInfo, error) {
-	tokenInfo, err := loginService.Auth.GenerateToken(ctx, userID)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	item := &schema.LoginTokenInfo{
-		AccessToken: tokenInfo.GetAccessToken(),
-		TokenType:   tokenInfo.GetTokenType(),
-		ExpiresAt:   tokenInfo.GetExpiresAt(),
-	}
-	return item, nil
-}
-
-// DestroyToken 销毁令牌
-func (loginService *Login) DestroyToken(ctx context.Context, tokenString string) error {
-	err := loginService.Auth.DestroyToken(ctx, tokenString)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	return nil
-}
-
 func (loginService *Login) CheckAndGetUser(ctx context.Context, req *proto.UserLoginInfo, res *unified.Response) error {
 	item, err := loginService.UserModel.Get(ctx, req.UserID)
 	if err != nil {
@@ -109,6 +75,17 @@ func (loginService *Login) CheckAndGetUser(ctx context.Context, req *proto.UserL
 	res.Items, _ = ptypes.MarshalAny(user)
 	return nil
 }
+func (loginService *Login) checkAndGetUser(ctx context.Context, userID string) (*schema.User, error) {
+	user, err := loginService.UserModel.Get(ctx, userID)
+	if err != nil {
+		return nil, err
+	} else if user == nil {
+		return nil, errors.ErrInvalidUser
+	} else if user.Status != 1 {
+		return nil, errors.ErrUserDisable
+	}
+	return user, nil
+}
 
 // GetLoginInfo 获取当前用户登录信息
 func (loginService *Login) GetLoginInfo(ctx context.Context, req *proto.UserLoginInfo, res *unified.Response) error {
@@ -118,11 +95,9 @@ func (loginService *Login) GetLoginInfo(ctx context.Context, req *proto.UserLogi
 			UserName: root.UserName,
 			RealName: root.RealName,
 		}
-
 		res.Items, _ = ptypes.MarshalAny(loginInfo)
 		return nil
 	}
-
 	user, err := loginService.UserModel.Get(ctx, req.UserID)
 	if err != nil {
 		return err

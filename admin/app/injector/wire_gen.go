@@ -6,19 +6,50 @@
 package injector
 
 import (
-	"github.com/ops-cn/go-devops/admin/app/bll/impl/bll"
+	"github.com/ops-cn/go-devops/admin/app/handler"
 	"github.com/ops-cn/go-devops/admin/app/model/impl/gorm/model"
+	"github.com/ops-cn/go-devops/admin/app/module/adapter"
 )
 
 // Injectors from wire.go:
 
 func BuildInjector() (*Injector, func(), error) {
-	db, cleanup, err := InitGormDB()
+	auther, cleanup, err := InitAuth()
 	if err != nil {
 		return nil, nil, err
 	}
-	trans := &model.Trans{
+	db, cleanup2, err := InitGormDB()
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	role := &model.Role{
 		DB: db,
+	}
+	roleMenu := &model.RoleMenu{
+		DB: db,
+	}
+	menuActionResource := &model.MenuActionResource{
+		DB: db,
+	}
+	user := &model.User{
+		DB: db,
+	}
+	userRole := &model.UserRole{
+		DB: db,
+	}
+	casbinAdapter := &adapter.CasbinAdapter{
+		RoleModel:         role,
+		RoleMenuModel:     roleMenu,
+		MenuResourceModel: menuActionResource,
+		UserModel:         user,
+		UserRoleModel:     userRole,
+	}
+	syncedEnforcer, cleanup3, err := InitCasbin(casbinAdapter)
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
 	}
 	menu := &model.Menu{
 		DB: db,
@@ -26,19 +57,49 @@ func BuildInjector() (*Injector, func(), error) {
 	menuAction := &model.MenuAction{
 		DB: db,
 	}
-	menuActionResource := &model.MenuActionResource{
+	login := &handler.Login{
+		Auth:            auther,
+		UserModel:       user,
+		UserRoleModel:   userRole,
+		RoleModel:       role,
+		RoleMenuModel:   roleMenu,
+		MenuModel:       menu,
+		MenuActionModel: menuAction,
+	}
+	trans := &model.Trans{
 		DB: db,
 	}
-	bllMenu := &bll.Menu{
+	implMenu := &handler.Menu{
 		TransModel:              trans,
 		MenuModel:               menu,
 		MenuActionModel:         menuAction,
 		MenuActionResourceModel: menuActionResource,
 	}
+	implRole := &handler.Role{
+		Enforcer:      syncedEnforcer,
+		TransModel:    trans,
+		RoleModel:     role,
+		RoleMenuModel: roleMenu,
+		UserModel:     user,
+	}
+	implUser := &handler.User{
+		Enforcer:      syncedEnforcer,
+		TransModel:    trans,
+		UserModel:     user,
+		UserRoleModel: userRole,
+		RoleModel:     role,
+	}
 	injector := &Injector{
-		MenuBll: bllMenu,
+		Auth:           auther,
+		CasbinEnforcer: syncedEnforcer,
+		LoginAPI:       login,
+		MenuAPI:        implMenu,
+		RoleAPI:        implRole,
+		UserAPI:        implUser,
 	}
 	return injector, func() {
+		cleanup3()
+		cleanup2()
 		cleanup()
 	}, nil
 }

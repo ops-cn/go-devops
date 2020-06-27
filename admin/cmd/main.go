@@ -5,9 +5,7 @@ import (
 	"github.com/micro/cli/v2"
 	"github.com/micro/go-micro/v2"
 	"github.com/ops-cn/go-devops/admin/app"
-	"github.com/ops-cn/go-devops/admin/app/handler"
 	"github.com/ops-cn/go-devops/common/logger"
-	adminPB "github.com/ops-cn/go-devops/proto/admin"
 )
 
 // VERSION 版本号，可以通过编译的方式指定版本号：go build -ldflags "-X main.VERSION=x.x.x"
@@ -55,10 +53,11 @@ func main() {
 			return nil
 		}),
 	)
-	err := adminPB.RegisterLoginHandler(service.Server(), new(handler.Login))
-	if err != nil {
-		panic(err)
-	}
+	app.SetHandler(service.Server())
+	//err := adminPB.RegisterLoginHandler(service.Server(), new(impl.Login))
+	//if err != nil {
+	//	panic(err)
+	//}
 	if err := service.Run(); err != nil {
 		panic(err)
 	}

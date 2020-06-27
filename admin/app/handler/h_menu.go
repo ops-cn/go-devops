@@ -6,17 +6,14 @@ import (
 	"os"
 
 	"github.com/google/wire"
-	"github.com/ops-cn/go-devops/admin/app/bll"
 	"github.com/ops-cn/go-devops/admin/app/model"
 	"github.com/ops-cn/go-devops/common/errors"
 	"github.com/ops-cn/go-devops/common/schema"
 	"github.com/ops-cn/go-devops/common/util"
 )
 
-var _ bll.IMenu = (*Menu)(nil)
-
 // MenuSet 注入Menu
-var MenuSet = wire.NewSet(wire.Struct(new(Menu), "*"), wire.Bind(new(bll.IMenu), new(*Menu)))
+var MenuSet = wire.NewSet(wire.Struct(new(Menu), "*"))
 
 // Menu 菜单管理
 type Menu struct {

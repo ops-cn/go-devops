@@ -91,7 +91,7 @@ ConfigDir = ""
 # 登录用户名
 UserName = "root"
 # 登录密码
-Password = "abc-123"
+Password = "root"
 # 显示的真实姓名
 RealName = "超级管理员"
 

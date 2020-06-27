@@ -4,7 +4,9 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/micro/go-micro/v2/server"
 	"github.com/ops-cn/go-devops/common/noworker"
+	adminPB "github.com/ops-cn/go-devops/proto/admin"
 	"net/http"
 	"os"
 	"os/signal"
@@ -23,6 +25,8 @@ import (
 	// 引入swagger
 	_ "github.com/ops-cn/go-devops/admin/app/swagger"
 )
+
+var srv server.Server
 
 type options struct {
 	ConfigFile string
@@ -70,6 +74,20 @@ func SetVersion(s string) Option {
 	}
 }
 
+func SetHandler(server server.Server) (func(), error) {
+	injector, injectorCleanFunc, err := injector.BuildInjector()
+	if err != nil {
+		return nil, err
+	}
+	err = adminPB.RegisterLoginHandler(server, injector.LoginAPI)
+	if err != nil {
+		panic(err)
+	}
+	return func() {
+		injectorCleanFunc()
+	}, nil
+}
+
 // Init 应用初始化
 func Init(ctx context.Context, opts ...Option) (func(), error) {
 	var o options
@@ -107,25 +125,27 @@ func Init(ctx context.Context, opts ...Option) (func(), error) {
 	//InitCaptcha()
 
 	// 初始化依赖注入器
-	injector, injectorCleanFunc, err := injector.BuildInjector()
+	//inject, injectorCleanFunc, err = injector.BuildInjector()
 	if err != nil {
 		return nil, err
 	}
-
-	// 初始化菜单数据
-	if config.C.Menu.Enable && config.C.Menu.Data != "" {
-		err = injector.MenuBll.InitData(ctx, config.C.Menu.Data)
-		if err != nil {
-			return nil, err
-		}
+	if err != nil {
+		panic(err)
 	}
+	// 初始化菜单数据
+	//if config.C.Menu.Enable && config.C.Menu.Data != "" {
+	//	err = injector.MenuBll.InitData(ctx, config.C.Menu.Data)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//}
 
 	// 初始化HTTP服务
 	//httpServerCleanFunc := InitHTTPServer(ctx, injector.Engine)
 
 	return func() {
 		//httpServerCleanFunc()
-		injectorCleanFunc()
+		//injectorCleanFunc()
 		loggerCleanFunc()
 	}, nil
 }
