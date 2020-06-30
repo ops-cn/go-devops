@@ -45,3 +45,8 @@ message MenuQueryParam {
   int32 ShowStatus = 7;
   int32 Status = 8;
 }
+
+message MenuQueryResult {
+  repeated Menu Data =1;
+  unified.PaginationResult PageResult=2;
+}

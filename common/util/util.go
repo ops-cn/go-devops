@@ -11,6 +11,8 @@ import (
 func StructMapToStruct(s, ts interface{}) error {
 
 	if !structs.IsStruct(s) || !structs.IsStruct(ts) {
+		fmt.Println(structs.IsStruct(s))
+		fmt.Println(structs.IsStruct(ts))
 		return nil
 	}
 

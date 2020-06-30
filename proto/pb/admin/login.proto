@@ -5,15 +5,11 @@ package admin;
 option go_package = "github.com/ops-cn/go-devops/proto/admin";
 
 service Login {
-//  rpc GetCaptcha (Length) returns(unified.Response) {}
-//  rpc ResCaptcha (LoginCaptcha) returns(unified.Response) {}
+
   rpc Verify (LoginParam) returns(unified.Response) {}
-//  rpc GenerateToken (UserLoginInfo) returns(unified.Response) {}
-//  rpc DestroyToken (LoginTokenInfo) returns(unified.Response) {}
-//  rpc checkAndGetUser (UserLoginInfo) returns(unified.Response) {}
-//  rpc GetLoginInfo (UserLoginInfo) returns(unified.Response) {}
-//  rpc QueryUserMenuTree (UserLoginInfo) returns(unified.Response) {}
-//  rpc UpdatePassword(UpdatePasswordParam)returns(unified.Response) {}
+  rpc GetLoginInfo (UserLoginInfo) returns(unified.Response) {}
+  rpc QueryUserMenuTree (UserLoginInfo) returns(unified.Response) {}
+  rpc UpdatePassword(UpdatePasswordParam)returns(unified.Response) {}
 }
 
 message Length {

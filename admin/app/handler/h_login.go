@@ -36,7 +36,8 @@ func (loginService *Login) Verify(ctx context.Context, req *proto.LoginParam, re
 	root := schema.GetRootUser()
 	user := &proto.User{}
 	if req.UserName == root.UserName && root.Password == util.MD5HashString(req.Password) {
-		util.StructMapToStruct(&root, &user)
+		util.StructCopy(user, root)
+		fmt.Println(user)
 		res.Items, _ = ptypes.MarshalAny(user)
 		return nil
 	}
@@ -56,12 +57,12 @@ func (loginService *Login) Verify(ctx context.Context, req *proto.LoginParam, re
 	} else if item.Status != 1 {
 		return errors.ErrUserDisable
 	}
-	util.StructMapToStruct(&item, &user)
+	util.StructCopy(user, item)
 	res.Items, _ = ptypes.MarshalAny(user)
 	return nil
 }
 
-func (loginService *Login) CheckAndGetUser(ctx context.Context, req *proto.UserLoginInfo, res *unified.Response) error {
+/*func (loginService *Login) CheckAndGetUser(ctx context.Context, req *proto.UserLoginInfo, res *unified.Response) error {
 	item, err := loginService.UserModel.Get(ctx, req.UserID)
 	if err != nil {
 		return err
@@ -71,10 +72,11 @@ func (loginService *Login) CheckAndGetUser(ctx context.Context, req *proto.UserL
 		return errors.ErrUserDisable
 	}
 	user := &proto.User{}
-	util.StructMapToStruct(&item, &user)
+	util.StructCopy(user, item)
 	res.Items, _ = ptypes.MarshalAny(user)
 	return nil
-}
+}*/
+
 func (loginService *Login) checkAndGetUser(ctx context.Context, userID string) (*schema.User, error) {
 	user, err := loginService.UserModel.Get(ctx, userID)
 	if err != nil {
@@ -98,7 +100,7 @@ func (loginService *Login) GetLoginInfo(ctx context.Context, req *proto.UserLogi
 		res.Items, _ = ptypes.MarshalAny(loginInfo)
 		return nil
 	}
-	user, err := loginService.UserModel.Get(ctx, req.UserID)
+	user, err := loginService.checkAndGetUser(ctx, req.UserID)
 	if err != nil {
 		return err
 	}
@@ -127,7 +129,7 @@ func (loginService *Login) GetLoginInfo(ctx context.Context, req *proto.UserLogi
 		var roles []*proto.Role
 		for _, v := range roleResult.Data {
 			role := &proto.Role{}
-			util.StructMapToStruct(&v, &role)
+			util.StructCopy(role, v)
 			roles = append(roles, role)
 		}
 		info.Roles = roles
@@ -222,7 +224,7 @@ func (loginService *Login) UpdatePassword(ctx context.Context, req *proto.Update
 		return errors.New400Response("root用户不允许更新密码")
 	}
 
-	user, err := loginService.UserModel.Get(ctx, req.UserID)
+	user, err := loginService.checkAndGetUser(ctx, req.UserID)
 	if err != nil {
 		return err
 	} else if util.SHA1HashString(req.OldPassword) != user.Password {

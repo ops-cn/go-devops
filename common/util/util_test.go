@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -49,4 +50,33 @@ func TestStructMapToStruct(t *testing.T) {
 	assert.Equal(t, foo.TBar, *tfoo.TBar)
 	assert.Equal(t, foo.CreatedAt, tfoo.CreatedAt)
 	assert.Equal(t, tfoo.PBar, "")
+}
+
+type Role struct {
+	RoleId   string
+	RoleName string
+}
+
+type Src struct {
+	Name string
+	ID   string
+	Role
+}
+
+type Dst struct {
+	Name string
+	ID   string
+	Role
+}
+
+func TestStructCopy(t *testing.T) {
+	role := Role{
+		RoleId:   "000",
+		RoleName: "管理员",
+	}
+	src := &Src{"katy", "000", role}
+
+	var dst Dst
+	StructCopy(&dst, src)
+	fmt.Println(dst)
 }

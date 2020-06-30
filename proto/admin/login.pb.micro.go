@@ -43,9 +43,10 @@ func NewLoginEndpoints() []*api.Endpoint {
 // Client API for Login service
 
 type LoginService interface {
-	//  rpc GetCaptcha (Length) returns(unified.Response) {}
-	//  rpc ResCaptcha (LoginCaptcha) returns(unified.Response) {}
 	Verify(ctx context.Context, in *LoginParam, opts ...client.CallOption) (*unified.Response, error)
+	GetLoginInfo(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error)
+	QueryUserMenuTree(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error)
+	UpdatePassword(ctx context.Context, in *UpdatePasswordParam, opts ...client.CallOption) (*unified.Response, error)
 }
 
 type loginService struct {
@@ -70,17 +71,51 @@ func (c *loginService) Verify(ctx context.Context, in *LoginParam, opts ...clien
 	return out, nil
 }
 
+func (c *loginService) GetLoginInfo(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "Login.GetLoginInfo", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *loginService) QueryUserMenuTree(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "Login.QueryUserMenuTree", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *loginService) UpdatePassword(ctx context.Context, in *UpdatePasswordParam, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "Login.UpdatePassword", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Login service
 
 type LoginHandler interface {
-	//  rpc GetCaptcha (Length) returns(unified.Response) {}
-	//  rpc ResCaptcha (LoginCaptcha) returns(unified.Response) {}
 	Verify(context.Context, *LoginParam, *unified.Response) error
+	GetLoginInfo(context.Context, *UserLoginInfo, *unified.Response) error
+	QueryUserMenuTree(context.Context, *UserLoginInfo, *unified.Response) error
+	UpdatePassword(context.Context, *UpdatePasswordParam, *unified.Response) error
 }
 
 func RegisterLoginHandler(s server.Server, hdlr LoginHandler, opts ...server.HandlerOption) error {
 	type login interface {
 		Verify(ctx context.Context, in *LoginParam, out *unified.Response) error
+		GetLoginInfo(ctx context.Context, in *UserLoginInfo, out *unified.Response) error
+		QueryUserMenuTree(ctx context.Context, in *UserLoginInfo, out *unified.Response) error
+		UpdatePassword(ctx context.Context, in *UpdatePasswordParam, out *unified.Response) error
 	}
 	type Login struct {
 		login
@@ -95,4 +130,16 @@ type loginHandler struct {
 
 func (h *loginHandler) Verify(ctx context.Context, in *LoginParam, out *unified.Response) error {
 	return h.LoginHandler.Verify(ctx, in, out)
+}
+
+func (h *loginHandler) GetLoginInfo(ctx context.Context, in *UserLoginInfo, out *unified.Response) error {
+	return h.LoginHandler.GetLoginInfo(ctx, in, out)
+}
+
+func (h *loginHandler) QueryUserMenuTree(ctx context.Context, in *UserLoginInfo, out *unified.Response) error {
+	return h.LoginHandler.QueryUserMenuTree(ctx, in, out)
+}
+
+func (h *loginHandler) UpdatePassword(ctx context.Context, in *UpdatePasswordParam, out *unified.Response) error {
+	return h.LoginHandler.UpdatePassword(ctx, in, out)
 }

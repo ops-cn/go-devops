@@ -129,17 +129,28 @@ func (a *Login) RefreshToken(c *gin.Context) {
 // GetUserInfo 获取当前用户信息
 func (a *Login) GetUserInfo(c *gin.Context) {
 	ctx := c.Request.Context()
-	info, err := a.LoginBll.GetLoginInfo(ctx, ginplus.GetUserID(c))
+	param := &proto.UserLoginInfo{
+		UserID: ginplus.GetUserID(c),
+	}
+	rsp, err := loginClient.GetLoginInfo(ctx, param)
+	userInfo := &proto.UserLoginInfo{}
+	ptypes.UnmarshalAny(rsp.Items, userInfo)
 	if err != nil {
 		ginplus.ResError(c, err)
 		return
 	}
-	ginplus.ResSuccess(c, info)
+	ginplus.ResSuccess(c, userInfo)
 }
 
 // QueryUserMenuTree 查询当前用户菜单树
 func (a *Login) QueryUserMenuTree(c *gin.Context) {
 	ctx := c.Request.Context()
+	param := &proto.UserLoginInfo{
+		UserID: ginplus.GetUserID(c),
+	}
+	rsp, err := loginClient.QueryUserMenuTree(ctx, param)
+	menu := &proto.Menu{}
+	ptypes.UnmarshalAny(rsp.Items, menu)
 	menus, err := a.LoginBll.QueryUserMenuTree(ctx, ginplus.GetUserID(c))
 	if err != nil {
 		ginplus.ResError(c, err)
