@@ -21,15 +21,17 @@ require (
 	github.com/koding/multiconfig v0.0.0-20171124222453-69c27309b2d7
 	github.com/micro/cli/v2 v2.1.2
 	github.com/micro/go-micro/v2 v2.9.0
-	github.com/ops-cn/proto v0.0.0-20200622030621-f2ed491adedd
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.5.1
 	github.com/swaggo/gin-swagger v1.2.0
 	github.com/swaggo/swag v1.6.7
 	github.com/tidwall/buntdb v1.1.2
 	go.mongodb.org/mongo-driver v1.3.4
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
+	google.golang.org/grpc v1.26.0
 	google.golang.org/protobuf v1.23.0
 	gopkg.in/yaml.v2 v2.2.8
 )
+
+replace google.golang.org/grpc => google.golang.org/grpc v1.26.0
