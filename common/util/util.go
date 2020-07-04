@@ -18,7 +18,6 @@ func StructMapToStruct(s, ts interface{}) error {
 
 	ss, tss := structs.New(s), structs.New(ts)
 	for _, tfield := range tss.Fields() {
-		fmt.Println("===============" + tfield.Name())
 		if !tfield.IsExported() {
 			continue
 		}

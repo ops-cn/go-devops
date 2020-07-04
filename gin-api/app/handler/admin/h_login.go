@@ -80,6 +80,7 @@ func (a *Login) Login(c *gin.Context) {
 	user := &proto.User{}
 	ptypes.UnmarshalAny(rsp.Items, user)
 	//user, err := a.LoginBll.Verify(ctx, item.UserName, item.Password)
+
 	if err != nil {
 		ginplus.ResError(c, err)
 		return
@@ -149,14 +150,15 @@ func (a *Login) QueryUserMenuTree(c *gin.Context) {
 		UserID: ginplus.GetUserID(c),
 	}
 	rsp, err := loginClient.QueryUserMenuTree(ctx, param)
-	menu := &proto.Menu{}
-	ptypes.UnmarshalAny(rsp.Items, menu)
-	menus, err := a.LoginBll.QueryUserMenuTree(ctx, ginplus.GetUserID(c))
 	if err != nil {
 		ginplus.ResError(c, err)
 		return
 	}
-	ginplus.ResList(c, menus)
+	menuTrees := &proto.MenuTrees{}
+	//这里又错误，未正确映射menuTrees的值
+	ptypes.UnmarshalAny(rsp.Items, menuTrees)
+
+	ginplus.ResList(c, menuTrees)
 }
 
 // UpdatePassword 更新个人密码
@@ -167,8 +169,13 @@ func (a *Login) UpdatePassword(c *gin.Context) {
 		ginplus.ResError(c, err)
 		return
 	}
+	param := &proto.UpdatePasswordParam{
+		UserID:      ginplus.GetUserID(c),
+		OldPassword: item.OldPassword,
+		NewPassword: item.NewPassword,
+	}
 
-	err := a.LoginBll.UpdatePassword(ctx, ginplus.GetUserID(c), item)
+	_, err := loginClient.UpdatePassword(ctx, param)
 	if err != nil {
 		ginplus.ResError(c, err)
 		return

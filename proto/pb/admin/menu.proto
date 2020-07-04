@@ -47,6 +47,15 @@ message MenuQueryParam {
 }
 
 message MenuQueryResult {
-  repeated Menu Data =1;
-  unified.PaginationResult PageResult=2;
+  repeated Menu Data = 1;
+  unified.PaginationResult PageResult = 2;
+}
+
+message MenuTree {
+  Menu Menu = 1;
+  MenuTree Children = 2;
+}
+
+message MenuTrees {
+  repeated MenuTree MenuTree=1;
 }
