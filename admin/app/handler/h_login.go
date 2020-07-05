@@ -226,16 +226,16 @@ func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.Use
 	for _, v := range menuTrees {
 		mTree := &proto.MenuTree{}
 		util.StructCopy(mTree, v)
-		//if v.Actions != nil {
-		//	for _, action := range v.Actions {
-		//		mAction := &proto.MenuAction{}
-		//		util.StructCopy(mAction, action)
-		//		mTree.Actions = append(mTree.Actions, mAction)
-		//	}
-		//}
-		a := []*schema.MenuTree(v.Children)
+		if v.Actions != nil {
+			for _, action := range v.Actions {
+				mAction := &proto.MenuAction{}
+				util.StructCopy(mAction, action)
+				mTree.Actions = append(mTree.Actions, mAction)
+			}
+		}
+
 		if v.Children != nil {
-			for _, child := range a {
+			for _, child := range v.Children.ToTree() {
 				tree := &proto.MenuTree{}
 				util.StructCopy(tree, child)
 				mTree.Children = append(mTree.Children, tree)
