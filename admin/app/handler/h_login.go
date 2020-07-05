@@ -141,13 +141,13 @@ func (loginService *Login) GetLoginInfo(ctx context.Context, req *proto.UserLogi
 
 // QueryUserMenuTree 查询当前用户的权限菜单树
 func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.UserLoginInfo, res *unified.Response) error {
-	var menuResult *schema.MenuQueryResult
-	var menuActionResult *schema.MenuActionQueryResult
+	var menuTrees schema.MenuTrees
+
 	isRoot := schema.CheckIsRootUser(ctx, req.UserID)
-	var err error
+
 	// 如果是root用户，则查询所有显示的菜单树
 	if isRoot {
-		menuResult, err = loginService.MenuModel.Query(ctx, schema.MenuQueryParam{
+		result, err := loginService.MenuModel.Query(ctx, schema.MenuQueryParam{
 			Status: 1,
 		}, schema.MenuQueryOptions{
 			OrderFields: schema.NewOrderFields(schema.NewOrderField("sequence", schema.OrderByDESC)),
@@ -156,11 +156,12 @@ func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.Use
 			return err
 		}
 
-		menuActionResult, err = loginService.MenuActionModel.Query(ctx, schema.MenuActionQueryParam{})
+		menuActionResult, err := loginService.MenuActionModel.Query(ctx, schema.MenuActionQueryParam{})
 		if err != nil {
 			return err
 		}
-		//menuResult.Data.FillMenuAction(menuActionResult.Data.ToMenuIDMap()).ToTree()
+
+		menuTrees = result.Data.FillMenuAction(menuActionResult.Data.ToMenuIDMap()).ToTree()
 		//return nil
 	} else {
 		userRoleResult, err := loginService.UserRoleModel.Query(ctx, schema.UserRoleQueryParam{
@@ -181,7 +182,7 @@ func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.Use
 			return errors.ErrNoPerm
 		}
 
-		menuResult, err = loginService.MenuModel.Query(ctx, schema.MenuQueryParam{
+		menuResult, err := loginService.MenuModel.Query(ctx, schema.MenuQueryParam{
 			IDs:    roleMenuResult.Data.ToMenuIDs(),
 			Status: 1,
 		})
@@ -210,16 +211,14 @@ func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.Use
 		}
 
 		sort.Sort(menuResult.Data)
-		menuActionResult, err = loginService.MenuActionModel.Query(ctx, schema.MenuActionQueryParam{
+		menuActionResult, err := loginService.MenuActionModel.Query(ctx, schema.MenuActionQueryParam{
 			IDs: roleMenuResult.Data.ToActionIDs(),
 		})
 		if err != nil {
 			return err
 		}
-		//menuResult.Data.FillMenuAction(menuActionResult.Data.ToMenuIDMap()).ToTree()
+		menuTrees = menuResult.Data.FillMenuAction(menuActionResult.Data.ToMenuIDMap()).ToTree()
 	}
-
-	menuTrees := menuResult.Data.FillMenuAction(menuActionResult.Data.ToMenuIDMap()).ToTree()
 
 	var mTreesPB = &proto.MenuTrees{}
 	//var mTrees []*proto.MenuTree
@@ -227,6 +226,22 @@ func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.Use
 	for _, v := range menuTrees {
 		mTree := &proto.MenuTree{}
 		util.StructCopy(mTree, v)
+		//if v.Actions != nil {
+		//	for _, action := range v.Actions {
+		//		mAction := &proto.MenuAction{}
+		//		util.StructCopy(mAction, action)
+		//		mTree.Actions = append(mTree.Actions, mAction)
+		//	}
+		//}
+		a := []*schema.MenuTree(v.Children)
+		if v.Children != nil {
+			for _, child := range a {
+				tree := &proto.MenuTree{}
+				util.StructCopy(tree, child)
+				mTree.Children = append(mTree.Children, tree)
+			}
+		}
+
 		//mTrees = append(mTrees, mTree)
 		mTreesPB.MenuTree = append(mTreesPB.MenuTree, mTree)
 	}
