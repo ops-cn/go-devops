@@ -235,7 +235,7 @@ func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.Use
 		}
 
 		if v.Children != nil {
-			for _, child := range v.Children.ToTree() {
+			for _, child := range *v.Children {
 				tree := &proto.MenuTree{}
 				util.StructCopy(tree, child)
 				mTree.Children = append(mTree.Children, tree)
