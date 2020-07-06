@@ -141,7 +141,10 @@ func (loginService *Login) GetLoginInfo(ctx context.Context, req *proto.UserLogi
 
 // QueryUserMenuTree 查询当前用户的权限菜单树
 func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.UserLoginInfo, res *unified.Response) error {
+	var menuTrees schema.MenuTrees
+
 	isRoot := schema.CheckIsRootUser(ctx, req.UserID)
+
 	// 如果是root用户，则查询所有显示的菜单树
 	if isRoot {
 		result, err := loginService.MenuModel.Query(ctx, schema.MenuQueryParam{
@@ -157,64 +160,93 @@ func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.Use
 		if err != nil {
 			return err
 		}
-		result.Data.FillMenuAction(menuActionResult.Data.ToMenuIDMap()).ToTree()
-		return nil
-	}
 
-	userRoleResult, err := loginService.UserRoleModel.Query(ctx, schema.UserRoleQueryParam{
-		UserID: req.UserID,
-	})
-	if err != nil {
-		return err
-	} else if len(userRoleResult.Data) == 0 {
-		return errors.ErrNoPerm
-	}
-
-	roleMenuResult, err := loginService.RoleMenuModel.Query(ctx, schema.RoleMenuQueryParam{
-		RoleIDs: userRoleResult.Data.ToRoleIDs(),
-	})
-	if err != nil {
-		return err
-	} else if len(roleMenuResult.Data) == 0 {
-		return errors.ErrNoPerm
-	}
-
-	menuResult, err := loginService.MenuModel.Query(ctx, schema.MenuQueryParam{
-		IDs:    roleMenuResult.Data.ToMenuIDs(),
-		Status: 1,
-	})
-	if err != nil {
-		return err
-	} else if len(menuResult.Data) == 0 {
-		return errors.ErrNoPerm
-	}
-
-	mData := menuResult.Data.ToMap()
-	var qIDs []string
-	for _, pid := range menuResult.Data.SplitParentIDs() {
-		if _, ok := mData[pid]; !ok {
-			qIDs = append(qIDs, pid)
+		menuTrees = result.Data.FillMenuAction(menuActionResult.Data.ToMenuIDMap()).ToTree()
+		//return nil
+	} else {
+		userRoleResult, err := loginService.UserRoleModel.Query(ctx, schema.UserRoleQueryParam{
+			UserID: req.UserID,
+		})
+		if err != nil {
+			return err
+		} else if len(userRoleResult.Data) == 0 {
+			return errors.ErrNoPerm
 		}
-	}
 
-	if len(qIDs) > 0 {
-		pmenuResult, err := loginService.MenuModel.Query(ctx, schema.MenuQueryParam{
-			IDs: menuResult.Data.SplitParentIDs(),
+		roleMenuResult, err := loginService.RoleMenuModel.Query(ctx, schema.RoleMenuQueryParam{
+			RoleIDs: userRoleResult.Data.ToRoleIDs(),
+		})
+		if err != nil {
+			return err
+		} else if len(roleMenuResult.Data) == 0 {
+			return errors.ErrNoPerm
+		}
+
+		menuResult, err := loginService.MenuModel.Query(ctx, schema.MenuQueryParam{
+			IDs:    roleMenuResult.Data.ToMenuIDs(),
+			Status: 1,
+		})
+		if err != nil {
+			return err
+		} else if len(menuResult.Data) == 0 {
+			return errors.ErrNoPerm
+		}
+
+		mData := menuResult.Data.ToMap()
+		var qIDs []string
+		for _, pid := range menuResult.Data.SplitParentIDs() {
+			if _, ok := mData[pid]; !ok {
+				qIDs = append(qIDs, pid)
+			}
+		}
+
+		if len(qIDs) > 0 {
+			pmenuResult, err := loginService.MenuModel.Query(ctx, schema.MenuQueryParam{
+				IDs: menuResult.Data.SplitParentIDs(),
+			})
+			if err != nil {
+				return err
+			}
+			menuResult.Data = append(menuResult.Data, pmenuResult.Data...)
+		}
+
+		sort.Sort(menuResult.Data)
+		menuActionResult, err := loginService.MenuActionModel.Query(ctx, schema.MenuActionQueryParam{
+			IDs: roleMenuResult.Data.ToActionIDs(),
 		})
 		if err != nil {
 			return err
 		}
-		menuResult.Data = append(menuResult.Data, pmenuResult.Data...)
+		menuTrees = menuResult.Data.FillMenuAction(menuActionResult.Data.ToMenuIDMap()).ToTree()
 	}
 
-	sort.Sort(menuResult.Data)
-	menuActionResult, err := loginService.MenuActionModel.Query(ctx, schema.MenuActionQueryParam{
-		IDs: roleMenuResult.Data.ToActionIDs(),
-	})
-	if err != nil {
-		return err
+	var mTreesPB = &proto.MenuTrees{}
+	//var mTrees []*proto.MenuTree
+
+	for _, v := range menuTrees {
+		mTree := &proto.MenuTree{}
+		util.StructCopy(mTree, v)
+		if v.Actions != nil {
+			for _, action := range v.Actions {
+				mAction := &proto.MenuAction{}
+				util.StructCopy(mAction, action)
+				mTree.Actions = append(mTree.Actions, mAction)
+			}
+		}
+
+		if v.Children != nil {
+			for _, child := range *v.Children {
+				tree := &proto.MenuTree{}
+				util.StructCopy(tree, child)
+				mTree.Children = append(mTree.Children, tree)
+			}
+		}
+
+		//mTrees = append(mTrees, mTree)
+		mTreesPB.MenuTree = append(mTreesPB.MenuTree, mTree)
 	}
-	menuResult.Data.FillMenuAction(menuActionResult.Data.ToMenuIDMap()).ToTree()
+
+	res.Items, _ = ptypes.MarshalAny(mTreesPB)
 	return nil
 }
 

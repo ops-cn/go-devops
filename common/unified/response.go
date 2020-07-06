@@ -58,11 +58,8 @@ func SetUserID(ctx context.Context, userID string) {
 }
 
 // ParseJSON 解析请求JSON
-func ParseJSON(ctx context.Context, obj interface{}) error {
-	md, ok := metadata.FromContext(ctx)
-	if !ok {
-		md = metadata.Metadata{}
-	}
+func ParseJSON(c, obj interface{}) error {
+
 	m := make(map[string]string)
 	json.Unmarshal(obj, m)
 	if err := c.ShouldBindJSON(obj); err != nil {
