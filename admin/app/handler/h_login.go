@@ -35,7 +35,7 @@ func (loginService *Login) Verify(ctx context.Context, req *proto.LoginParam, re
 	// 检查是否是超级用户
 	root := schema.GetRootUser()
 	user := &proto.User{}
-	if req.UserName == root.UserName && root.Password == util.MD5HashString(req.Password) {
+	if req.UserName == root.UserName && root.Password == req.Password {
 		util.StructCopy(user, root)
 		fmt.Println(user)
 		res.Items, _ = ptypes.MarshalAny(user)
@@ -222,7 +222,6 @@ func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.Use
 
 	var mTreesPB = &proto.MenuTrees{}
 	//var mTrees []*proto.MenuTree
-
 	for _, v := range menuTrees {
 		mTree := &proto.MenuTree{}
 		util.StructCopy(mTree, v)
@@ -233,7 +232,6 @@ func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.Use
 				mTree.Actions = append(mTree.Actions, mAction)
 			}
 		}
-
 		if v.Children != nil {
 			for _, child := range *v.Children {
 				tree := &proto.MenuTree{}
@@ -242,10 +240,8 @@ func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.Use
 			}
 		}
 
-		//mTrees = append(mTrees, mTree)
 		mTreesPB.MenuTree = append(mTreesPB.MenuTree, mTree)
 	}
-
 	res.Items, _ = ptypes.MarshalAny(mTreesPB)
 	return nil
 }
