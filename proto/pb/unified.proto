@@ -30,3 +30,8 @@ message PaginationParam {
   uint32 Current = 3;
   uint32 PageSize = 4;
 }
+// OrderField 排序字段
+message OrderField {
+  string key = 1;
+  int32 OrderDirection = 2;
+}

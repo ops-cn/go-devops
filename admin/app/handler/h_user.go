@@ -3,12 +3,16 @@ package handler
 import (
 	"context"
 	"github.com/casbin/casbin/v2"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/google/wire"
+	"github.com/jinzhu/copier"
 	"github.com/ops-cn/go-devops/admin/app/model"
 	"github.com/ops-cn/go-devops/common/errors"
 	"github.com/ops-cn/go-devops/common/noworker"
 	"github.com/ops-cn/go-devops/common/schema"
 	"github.com/ops-cn/go-devops/common/util"
+	proto "github.com/ops-cn/go-devops/proto/admin"
+	"github.com/ops-cn/go-devops/proto/unified"
 )
 
 // UserSet 注入User
@@ -24,27 +28,39 @@ type User struct {
 }
 
 // Query 查询数据
-func (a *User) Query(ctx context.Context, params schema.UserQueryParam, opts ...schema.UserQueryOptions) (*schema.UserQueryResult, error) {
-	return a.UserModel.Query(ctx, params, opts...)
+func (userMgr *User) Query(ctx context.Context, req *proto.UserQueryReq, res *unified.Response) error {
+	param := schema.UserQueryParam{}
+	copier.Copy(param, req.UserQueryParam)
+
+	opts := schema.UserQueryOptions{}
+	copier.Copy(opts, req.UserQueryOptions)
+	result, err := userMgr.UserModel.Query(ctx, param, opts)
+	if err != nil {
+		return err
+	}
+	pbResult := &proto.UserQueryResult{}
+	util.StructCopy(pbResult, result)
+	res.Items, _ = ptypes.MarshalAny(pbResult)
+	return nil
 }
 
 // QueryShow 查询显示项数据
-func (a *User) QueryShow(ctx context.Context, params schema.UserQueryParam, opts ...schema.UserQueryOptions) (*schema.UserShowQueryResult, error) {
-	result, err := a.UserModel.Query(ctx, params, opts...)
+func (userMgr *User) QueryShow(ctx context.Context, params schema.UserQueryParam, opts ...schema.UserQueryOptions) (*schema.UserShowQueryResult, error) {
+	result, err := userMgr.UserModel.Query(ctx, params, opts...)
 	if err != nil {
 		return nil, err
 	} else if result == nil {
 		return nil, nil
 	}
 
-	userRoleResult, err := a.UserRoleModel.Query(ctx, schema.UserRoleQueryParam{
+	userRoleResult, err := userMgr.UserRoleModel.Query(ctx, schema.UserRoleQueryParam{
 		UserIDs: result.Data.ToIDs(),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	roleResult, err := a.RoleModel.Query(ctx, schema.RoleQueryParam{
+	roleResult, err := userMgr.RoleModel.Query(ctx, schema.RoleQueryParam{
 		IDs: userRoleResult.Data.ToRoleIDs(),
 	})
 	if err != nil {
@@ -55,15 +71,15 @@ func (a *User) QueryShow(ctx context.Context, params schema.UserQueryParam, opts
 }
 
 // Get 查询指定数据
-func (a *User) Get(ctx context.Context, id string, opts ...schema.UserQueryOptions) (*schema.User, error) {
-	item, err := a.UserModel.Get(ctx, id, opts...)
+func (userMgr *User) GetUser(ctx context.Context, id string, opts ...schema.UserQueryOptions) (*schema.User, error) {
+	item, err := userMgr.UserModel.Get(ctx, id, opts...)
 	if err != nil {
 		return nil, err
 	} else if item == nil {
 		return nil, errors.ErrNotFound
 	}
 
-	userRoleResult, err := a.UserRoleModel.Query(ctx, schema.UserRoleQueryParam{
+	userRoleResult, err := userMgr.UserRoleModel.Query(ctx, schema.UserRoleQueryParam{
 		UserID: id,
 	})
 	if err != nil {
@@ -73,42 +89,99 @@ func (a *User) Get(ctx context.Context, id string, opts ...schema.UserQueryOptio
 
 	return item, nil
 }
+func (userMgr *User) Get(ctx context.Context, req *proto.UserReq, res *unified.Response) error {
+	opts := schema.UserQueryOptions{}
+	copier.Copy(opts, req.UserQueryOptions)
+	user, err := userMgr.UserModel.Get(ctx, req.CurrentID, opts)
+	if err != nil {
+		return err
+	} else if user == nil {
+		return errors.ErrNotFound
+	}
+
+	userRoleResult, err := userMgr.UserRoleModel.Query(ctx, schema.UserRoleQueryParam{
+		UserID: req.CurrentID,
+	})
+	if err != nil {
+		return err
+	}
+	user.UserRoles = userRoleResult.Data
+	pbUser := &proto.User{}
+	copier.Copy(pbUser, user)
+	res.Items, _ = ptypes.MarshalAny(pbUser)
+	return nil
+}
 
 // Create 创建数据
-func (a *User) Create(ctx context.Context, item schema.User) (*schema.IDResult, error) {
-	err := a.checkUserName(ctx, item)
+func (userMgr *User) Create(ctx context.Context, req *proto.User, res *unified.Response) error {
+
+	user := schema.User{}
+	copier.Copy(user, req)
+	err := userMgr.checkUserName(ctx, user)
+	if err != nil {
+		return err
+	}
+
+	user.Password = util.SHA1HashString(user.Password)
+	user.ID = noworker.NewID()
+	err = ExecTrans(ctx, userMgr.TransModel, func(ctx context.Context) error {
+		for _, urItem := range user.UserRoles {
+			urItem.ID = noworker.NewID()
+			urItem.UserID = user.ID
+			err := userMgr.UserRoleModel.Create(ctx, *urItem)
+			if err != nil {
+				return err
+			}
+		}
+
+		return userMgr.UserModel.Create(ctx, user)
+	})
+	if err != nil {
+		return err
+	}
+
+	LoadCasbinPolicy(ctx, userMgr.Enforcer)
+	newId := schema.NewIDResult(user.ID)
+	pbUser := &proto.User{
+		ID: newId.ID,
+	}
+	res.Items, _ = ptypes.MarshalAny(pbUser)
+	return nil
+}
+func (userMgr *User) CreateID(ctx context.Context, item schema.User) (*schema.IDResult, error) {
+	err := userMgr.checkUserName(ctx, item)
 	if err != nil {
 		return nil, err
 	}
 
 	item.Password = util.SHA1HashString(item.Password)
 	item.ID = noworker.NewID()
-	err = ExecTrans(ctx, a.TransModel, func(ctx context.Context) error {
+	err = ExecTrans(ctx, userMgr.TransModel, func(ctx context.Context) error {
 		for _, urItem := range item.UserRoles {
 			urItem.ID = noworker.NewID()
 			urItem.UserID = item.ID
-			err := a.UserRoleModel.Create(ctx, *urItem)
+			err := userMgr.UserRoleModel.Create(ctx, *urItem)
 			if err != nil {
 				return err
 			}
 		}
 
-		return a.UserModel.Create(ctx, item)
+		return userMgr.UserModel.Create(ctx, item)
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	LoadCasbinPolicy(ctx, a.Enforcer)
+	LoadCasbinPolicy(ctx, userMgr.Enforcer)
 	return schema.NewIDResult(item.ID), nil
 }
 
-func (a *User) checkUserName(ctx context.Context, item schema.User) error {
+func (userMgr *User) checkUserName(ctx context.Context, item schema.User) error {
 	if item.UserName == schema.GetRootUser().UserName {
 		return errors.New400Response("用户名不合法")
 	}
 
-	result, err := a.UserModel.Query(ctx, schema.UserQueryParam{
+	result, err := userMgr.UserModel.Query(ctx, schema.UserQueryParam{
 		PaginationParam: schema.PaginationParam{OnlyCount: true},
 		UserName:        item.UserName,
 	})
@@ -121,14 +194,14 @@ func (a *User) checkUserName(ctx context.Context, item schema.User) error {
 }
 
 // Update 更新数据
-func (a *User) Update(ctx context.Context, id string, item schema.User) error {
-	oldItem, err := a.Get(ctx, id)
+func (userMgr *User) Update(ctx context.Context, id string, item schema.User) error {
+	oldItem, err := userMgr.GetUser(ctx, id)
 	if err != nil {
 		return err
 	} else if oldItem == nil {
 		return errors.ErrNotFound
 	} else if oldItem.UserName != item.UserName {
-		err := a.checkUserName(ctx, item)
+		err := userMgr.checkUserName(ctx, item)
 		if err != nil {
 			return err
 		}
@@ -143,35 +216,35 @@ func (a *User) Update(ctx context.Context, id string, item schema.User) error {
 	item.ID = oldItem.ID
 	item.Creator = oldItem.Creator
 	item.CreatedAt = oldItem.CreatedAt
-	err = ExecTrans(ctx, a.TransModel, func(ctx context.Context) error {
-		addUserRoles, delUserRoles := a.compareUserRoles(ctx, oldItem.UserRoles, item.UserRoles)
+	err = ExecTrans(ctx, userMgr.TransModel, func(ctx context.Context) error {
+		addUserRoles, delUserRoles := userMgr.compareUserRoles(ctx, oldItem.UserRoles, item.UserRoles)
 		for _, rmitem := range addUserRoles {
 			rmitem.ID = noworker.NewID()
 			rmitem.UserID = id
-			err := a.UserRoleModel.Create(ctx, *rmitem)
+			err := userMgr.UserRoleModel.Create(ctx, *rmitem)
 			if err != nil {
 				return err
 			}
 		}
 
 		for _, rmitem := range delUserRoles {
-			err := a.UserRoleModel.Delete(ctx, rmitem.ID)
+			err := userMgr.UserRoleModel.Delete(ctx, rmitem.ID)
 			if err != nil {
 				return err
 			}
 		}
 
-		return a.UserModel.Update(ctx, id, item)
+		return userMgr.UserModel.Update(ctx, id, item)
 	})
 	if err != nil {
 		return err
 	}
 
-	LoadCasbinPolicy(ctx, a.Enforcer)
+	LoadCasbinPolicy(ctx, userMgr.Enforcer)
 	return nil
 }
 
-func (a *User) compareUserRoles(ctx context.Context, oldUserRoles, newUserRoles schema.UserRoles) (addList, delList schema.UserRoles) {
+func (userMgr *User) compareUserRoles(ctx context.Context, oldUserRoles, newUserRoles schema.UserRoles) (addList, delList schema.UserRoles) {
 	mOldUserRoles := oldUserRoles.ToMap()
 	mNewUserRoles := newUserRoles.ToMap()
 
@@ -190,33 +263,33 @@ func (a *User) compareUserRoles(ctx context.Context, oldUserRoles, newUserRoles 
 }
 
 // Delete 删除数据
-func (a *User) Delete(ctx context.Context, id string) error {
-	oldItem, err := a.UserModel.Get(ctx, id)
+func (userMgr *User) Delete(ctx context.Context, id string) error {
+	oldItem, err := userMgr.UserModel.Get(ctx, id)
 	if err != nil {
 		return err
 	} else if oldItem == nil {
 		return errors.ErrNotFound
 	}
 
-	err = ExecTrans(ctx, a.TransModel, func(ctx context.Context) error {
-		err := a.UserRoleModel.DeleteByUserID(ctx, id)
+	err = ExecTrans(ctx, userMgr.TransModel, func(ctx context.Context) error {
+		err := userMgr.UserRoleModel.DeleteByUserID(ctx, id)
 		if err != nil {
 			return err
 		}
 
-		return a.UserModel.Delete(ctx, id)
+		return userMgr.UserModel.Delete(ctx, id)
 	})
 	if err != nil {
 		return err
 	}
 
-	LoadCasbinPolicy(ctx, a.Enforcer)
+	LoadCasbinPolicy(ctx, userMgr.Enforcer)
 	return nil
 }
 
 // UpdateStatus 更新状态
-func (a *User) UpdateStatus(ctx context.Context, id string, status int) error {
-	oldItem, err := a.UserModel.Get(ctx, id)
+func (userMgr *User) UpdateStatus(ctx context.Context, id string, status int) error {
+	oldItem, err := userMgr.UserModel.Get(ctx, id)
 	if err != nil {
 		return err
 	} else if oldItem == nil {
@@ -224,11 +297,11 @@ func (a *User) UpdateStatus(ctx context.Context, id string, status int) error {
 	}
 	oldItem.Status = status
 
-	err = a.UserModel.UpdateStatus(ctx, id, status)
+	err = userMgr.UserModel.UpdateStatus(ctx, id, status)
 	if err != nil {
 		return err
 	}
 
-	LoadCasbinPolicy(ctx, a.Enforcer)
+	LoadCasbinPolicy(ctx, userMgr.Enforcer)
 	return nil
 }

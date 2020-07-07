@@ -7,7 +7,15 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/golang/protobuf/ptypes/timestamp"
+	unified "github.com/ops-cn/go-devops/proto/unified"
 	math "math"
+)
+
+import (
+	context "context"
+	api "github.com/micro/go-micro/v2/api"
+	client "github.com/micro/go-micro/v2/client"
+	server "github.com/micro/go-micro/v2/server"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -20,3 +28,184 @@ var _ = math.Inf
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ api.Endpoint
+var _ context.Context
+var _ client.Option
+var _ server.Option
+
+// Api Endpoints for UserMgr service
+
+func NewUserMgrEndpoints() []*api.Endpoint {
+	return []*api.Endpoint{}
+}
+
+// Client API for UserMgr service
+
+type UserMgrService interface {
+	// 查询数据
+	Query(ctx context.Context, in *UserQueryReq, opts ...client.CallOption) (*unified.Response, error)
+	// 查询指定数据
+	Get(ctx context.Context, in *UserReq, opts ...client.CallOption) (*unified.Response, error)
+	// 创建数据
+	Create(ctx context.Context, in *User, opts ...client.CallOption) (*unified.Response, error)
+	// 更新数据
+	Update(ctx context.Context, in *UserReq, opts ...client.CallOption) (*unified.Response, error)
+	// 删除数据
+	Delete(ctx context.Context, in *User, opts ...client.CallOption) (*unified.Response, error)
+	// 更新状态
+	UpdateStatus(ctx context.Context, in *User, opts ...client.CallOption) (*unified.Response, error)
+	// 更新密码
+	UpdatePassword(ctx context.Context, in *User, opts ...client.CallOption) (*unified.Response, error)
+}
+
+type userMgrService struct {
+	c    client.Client
+	name string
+}
+
+func NewUserMgrService(name string, c client.Client) UserMgrService {
+	return &userMgrService{
+		c:    c,
+		name: name,
+	}
+}
+
+func (c *userMgrService) Query(ctx context.Context, in *UserQueryReq, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "UserMgr.Query", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userMgrService) Get(ctx context.Context, in *UserReq, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "UserMgr.Get", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userMgrService) Create(ctx context.Context, in *User, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "UserMgr.Create", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userMgrService) Update(ctx context.Context, in *UserReq, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "UserMgr.Update", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userMgrService) Delete(ctx context.Context, in *User, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "UserMgr.Delete", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userMgrService) UpdateStatus(ctx context.Context, in *User, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "UserMgr.UpdateStatus", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userMgrService) UpdatePassword(ctx context.Context, in *User, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "UserMgr.UpdatePassword", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Server API for UserMgr service
+
+type UserMgrHandler interface {
+	// 查询数据
+	Query(context.Context, *UserQueryReq, *unified.Response) error
+	// 查询指定数据
+	Get(context.Context, *UserReq, *unified.Response) error
+	// 创建数据
+	Create(context.Context, *User, *unified.Response) error
+	// 更新数据
+	Update(context.Context, *UserReq, *unified.Response) error
+	// 删除数据
+	Delete(context.Context, *User, *unified.Response) error
+	// 更新状态
+	UpdateStatus(context.Context, *User, *unified.Response) error
+	// 更新密码
+	UpdatePassword(context.Context, *User, *unified.Response) error
+}
+
+func RegisterUserMgrHandler(s server.Server, hdlr UserMgrHandler, opts ...server.HandlerOption) error {
+	type userMgr interface {
+		Query(ctx context.Context, in *UserQueryReq, out *unified.Response) error
+		Get(ctx context.Context, in *UserReq, out *unified.Response) error
+		Create(ctx context.Context, in *User, out *unified.Response) error
+		Update(ctx context.Context, in *UserReq, out *unified.Response) error
+		Delete(ctx context.Context, in *User, out *unified.Response) error
+		UpdateStatus(ctx context.Context, in *User, out *unified.Response) error
+		UpdatePassword(ctx context.Context, in *User, out *unified.Response) error
+	}
+	type UserMgr struct {
+		userMgr
+	}
+	h := &userMgrHandler{hdlr}
+	return s.Handle(s.NewHandler(&UserMgr{h}, opts...))
+}
+
+type userMgrHandler struct {
+	UserMgrHandler
+}
+
+func (h *userMgrHandler) Query(ctx context.Context, in *UserQueryReq, out *unified.Response) error {
+	return h.UserMgrHandler.Query(ctx, in, out)
+}
+
+func (h *userMgrHandler) Get(ctx context.Context, in *UserReq, out *unified.Response) error {
+	return h.UserMgrHandler.Get(ctx, in, out)
+}
+
+func (h *userMgrHandler) Create(ctx context.Context, in *User, out *unified.Response) error {
+	return h.UserMgrHandler.Create(ctx, in, out)
+}
+
+func (h *userMgrHandler) Update(ctx context.Context, in *UserReq, out *unified.Response) error {
+	return h.UserMgrHandler.Update(ctx, in, out)
+}
+
+func (h *userMgrHandler) Delete(ctx context.Context, in *User, out *unified.Response) error {
+	return h.UserMgrHandler.Delete(ctx, in, out)
+}
+
+func (h *userMgrHandler) UpdateStatus(ctx context.Context, in *User, out *unified.Response) error {
+	return h.UserMgrHandler.UpdateStatus(ctx, in, out)
+}
+
+func (h *userMgrHandler) UpdatePassword(ctx context.Context, in *User, out *unified.Response) error {
+	return h.UserMgrHandler.UpdatePassword(ctx, in, out)
+}

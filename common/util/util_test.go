@@ -80,3 +80,8 @@ func TestStructCopy(t *testing.T) {
 	StructCopy(&dst, src)
 	fmt.Println(dst)
 }
+
+func TestSHA1Hash(t *testing.T) {
+	str := "oracle"
+	t.Log(SHA1HashString(str))
+}

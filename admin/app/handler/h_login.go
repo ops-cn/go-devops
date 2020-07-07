@@ -31,7 +31,7 @@ type Login struct {
 }
 
 // Verify 登录验证
-func (loginService *Login) Verify(ctx context.Context, req *proto.LoginParam, res *unified.Response) error {
+func (loginMgr *Login) Verify(ctx context.Context, req *proto.LoginParam, res *unified.Response) error {
 	// 检查是否是超级用户
 	root := schema.GetRootUser()
 	user := &proto.User{}
@@ -42,7 +42,7 @@ func (loginService *Login) Verify(ctx context.Context, req *proto.LoginParam, re
 		return nil
 	}
 	fmt.Println(user)
-	result, err := loginService.UserModel.Query(ctx, schema.UserQueryParam{
+	result, err := loginMgr.UserModel.Query(ctx, schema.UserQueryParam{
 		UserName: req.UserName,
 	})
 	if err != nil {
@@ -77,8 +77,8 @@ func (loginService *Login) Verify(ctx context.Context, req *proto.LoginParam, re
 	return nil
 }*/
 
-func (loginService *Login) checkAndGetUser(ctx context.Context, userID string) (*schema.User, error) {
-	user, err := loginService.UserModel.Get(ctx, userID)
+func (loginMgr *Login) checkAndGetUser(ctx context.Context, userID string) (*schema.User, error) {
+	user, err := loginMgr.UserModel.Get(ctx, userID)
 	if err != nil {
 		return nil, err
 	} else if user == nil {
@@ -90,7 +90,7 @@ func (loginService *Login) checkAndGetUser(ctx context.Context, userID string) (
 }
 
 // GetLoginInfo 获取当前用户登录信息
-func (loginService *Login) GetLoginInfo(ctx context.Context, req *proto.UserLoginInfo, res *unified.Response) error {
+func (loginMgr *Login) GetLoginInfo(ctx context.Context, req *proto.UserLoginInfo, res *unified.Response) error {
 	if isRoot := schema.CheckIsRootUser(ctx, req.UserID); isRoot {
 		root := schema.GetRootUser()
 		loginInfo := &proto.UserLoginInfo{
@@ -100,7 +100,7 @@ func (loginService *Login) GetLoginInfo(ctx context.Context, req *proto.UserLogi
 		res.Items, _ = ptypes.MarshalAny(loginInfo)
 		return nil
 	}
-	user, err := loginService.checkAndGetUser(ctx, req.UserID)
+	user, err := loginMgr.checkAndGetUser(ctx, req.UserID)
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func (loginService *Login) GetLoginInfo(ctx context.Context, req *proto.UserLogi
 		RealName: user.RealName,
 	}
 
-	userRoleResult, err := loginService.UserRoleModel.Query(ctx, schema.UserRoleQueryParam{
+	userRoleResult, err := loginMgr.UserRoleModel.Query(ctx, schema.UserRoleQueryParam{
 		UserID: req.UserID,
 	})
 	if err != nil {
@@ -119,7 +119,7 @@ func (loginService *Login) GetLoginInfo(ctx context.Context, req *proto.UserLogi
 	}
 
 	if roleIDs := userRoleResult.Data.ToRoleIDs(); len(roleIDs) > 0 {
-		roleResult, err := loginService.RoleModel.Query(ctx, schema.RoleQueryParam{
+		roleResult, err := loginMgr.RoleModel.Query(ctx, schema.RoleQueryParam{
 			IDs:    roleIDs,
 			Status: 1,
 		})
@@ -140,14 +140,14 @@ func (loginService *Login) GetLoginInfo(ctx context.Context, req *proto.UserLogi
 }
 
 // QueryUserMenuTree 查询当前用户的权限菜单树
-func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.UserLoginInfo, res *unified.Response) error {
+func (loginMgr *Login) QueryUserMenuTree(ctx context.Context, req *proto.UserLoginInfo, res *unified.Response) error {
 	var menuTrees schema.MenuTrees
 
 	isRoot := schema.CheckIsRootUser(ctx, req.UserID)
 
 	// 如果是root用户，则查询所有显示的菜单树
 	if isRoot {
-		result, err := loginService.MenuModel.Query(ctx, schema.MenuQueryParam{
+		result, err := loginMgr.MenuModel.Query(ctx, schema.MenuQueryParam{
 			Status: 1,
 		}, schema.MenuQueryOptions{
 			OrderFields: schema.NewOrderFields(schema.NewOrderField("sequence", schema.OrderByDESC)),
@@ -156,7 +156,7 @@ func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.Use
 			return err
 		}
 
-		menuActionResult, err := loginService.MenuActionModel.Query(ctx, schema.MenuActionQueryParam{})
+		menuActionResult, err := loginMgr.MenuActionModel.Query(ctx, schema.MenuActionQueryParam{})
 		if err != nil {
 			return err
 		}
@@ -164,7 +164,7 @@ func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.Use
 		menuTrees = result.Data.FillMenuAction(menuActionResult.Data.ToMenuIDMap()).ToTree()
 		//return nil
 	} else {
-		userRoleResult, err := loginService.UserRoleModel.Query(ctx, schema.UserRoleQueryParam{
+		userRoleResult, err := loginMgr.UserRoleModel.Query(ctx, schema.UserRoleQueryParam{
 			UserID: req.UserID,
 		})
 		if err != nil {
@@ -173,7 +173,7 @@ func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.Use
 			return errors.ErrNoPerm
 		}
 
-		roleMenuResult, err := loginService.RoleMenuModel.Query(ctx, schema.RoleMenuQueryParam{
+		roleMenuResult, err := loginMgr.RoleMenuModel.Query(ctx, schema.RoleMenuQueryParam{
 			RoleIDs: userRoleResult.Data.ToRoleIDs(),
 		})
 		if err != nil {
@@ -182,7 +182,7 @@ func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.Use
 			return errors.ErrNoPerm
 		}
 
-		menuResult, err := loginService.MenuModel.Query(ctx, schema.MenuQueryParam{
+		menuResult, err := loginMgr.MenuModel.Query(ctx, schema.MenuQueryParam{
 			IDs:    roleMenuResult.Data.ToMenuIDs(),
 			Status: 1,
 		})
@@ -201,7 +201,7 @@ func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.Use
 		}
 
 		if len(qIDs) > 0 {
-			pmenuResult, err := loginService.MenuModel.Query(ctx, schema.MenuQueryParam{
+			pmenuResult, err := loginMgr.MenuModel.Query(ctx, schema.MenuQueryParam{
 				IDs: menuResult.Data.SplitParentIDs(),
 			})
 			if err != nil {
@@ -211,7 +211,7 @@ func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.Use
 		}
 
 		sort.Sort(menuResult.Data)
-		menuActionResult, err := loginService.MenuActionModel.Query(ctx, schema.MenuActionQueryParam{
+		menuActionResult, err := loginMgr.MenuActionModel.Query(ctx, schema.MenuActionQueryParam{
 			IDs: roleMenuResult.Data.ToActionIDs(),
 		})
 		if err != nil {
@@ -247,12 +247,12 @@ func (loginService *Login) QueryUserMenuTree(ctx context.Context, req *proto.Use
 }
 
 // UpdatePassword 更新当前用户登录密码
-func (loginService *Login) UpdatePassword(ctx context.Context, req *proto.UpdatePasswordParam, res *unified.Response) error {
+func (loginMgr *Login) UpdatePassword(ctx context.Context, req *proto.UpdatePasswordParam, res *unified.Response) error {
 	if schema.CheckIsRootUser(ctx, req.UserID) {
 		return errors.New400Response("root用户不允许更新密码")
 	}
 
-	user, err := loginService.checkAndGetUser(ctx, req.UserID)
+	user, err := loginMgr.checkAndGetUser(ctx, req.UserID)
 	if err != nil {
 		return err
 	} else if util.SHA1HashString(req.OldPassword) != user.Password {
@@ -260,7 +260,7 @@ func (loginService *Login) UpdatePassword(ctx context.Context, req *proto.Update
 	}
 
 	req.NewPassword = util.SHA1HashString(req.NewPassword)
-	err = loginService.UserModel.UpdatePassword(ctx, req.UserID, req.NewPassword)
+	err = loginMgr.UserModel.UpdatePassword(ctx, req.UserID, req.NewPassword)
 
 	return err
 }

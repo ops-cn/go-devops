@@ -34,35 +34,35 @@ var _ context.Context
 var _ client.Option
 var _ server.Option
 
-// Api Endpoints for Login service
+// Api Endpoints for LoginMgr service
 
-func NewLoginEndpoints() []*api.Endpoint {
+func NewLoginMgrEndpoints() []*api.Endpoint {
 	return []*api.Endpoint{}
 }
 
-// Client API for Login service
+// Client API for LoginMgr service
 
-type LoginService interface {
+type LoginMgrService interface {
 	Verify(ctx context.Context, in *LoginParam, opts ...client.CallOption) (*unified.Response, error)
 	GetLoginInfo(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error)
 	QueryUserMenuTree(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error)
 	UpdatePassword(ctx context.Context, in *UpdatePasswordParam, opts ...client.CallOption) (*unified.Response, error)
 }
 
-type loginService struct {
+type loginMgrService struct {
 	c    client.Client
 	name string
 }
 
-func NewLoginService(name string, c client.Client) LoginService {
-	return &loginService{
+func NewLoginMgrService(name string, c client.Client) LoginMgrService {
+	return &loginMgrService{
 		c:    c,
 		name: name,
 	}
 }
 
-func (c *loginService) Verify(ctx context.Context, in *LoginParam, opts ...client.CallOption) (*unified.Response, error) {
-	req := c.c.NewRequest(c.name, "Login.Verify", in)
+func (c *loginMgrService) Verify(ctx context.Context, in *LoginParam, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "LoginMgr.Verify", in)
 	out := new(unified.Response)
 	err := c.c.Call(ctx, req, out, opts...)
 	if err != nil {
@@ -71,8 +71,8 @@ func (c *loginService) Verify(ctx context.Context, in *LoginParam, opts ...clien
 	return out, nil
 }
 
-func (c *loginService) GetLoginInfo(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error) {
-	req := c.c.NewRequest(c.name, "Login.GetLoginInfo", in)
+func (c *loginMgrService) GetLoginInfo(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "LoginMgr.GetLoginInfo", in)
 	out := new(unified.Response)
 	err := c.c.Call(ctx, req, out, opts...)
 	if err != nil {
@@ -81,8 +81,8 @@ func (c *loginService) GetLoginInfo(ctx context.Context, in *UserLoginInfo, opts
 	return out, nil
 }
 
-func (c *loginService) QueryUserMenuTree(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error) {
-	req := c.c.NewRequest(c.name, "Login.QueryUserMenuTree", in)
+func (c *loginMgrService) QueryUserMenuTree(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "LoginMgr.QueryUserMenuTree", in)
 	out := new(unified.Response)
 	err := c.c.Call(ctx, req, out, opts...)
 	if err != nil {
@@ -91,8 +91,8 @@ func (c *loginService) QueryUserMenuTree(ctx context.Context, in *UserLoginInfo,
 	return out, nil
 }
 
-func (c *loginService) UpdatePassword(ctx context.Context, in *UpdatePasswordParam, opts ...client.CallOption) (*unified.Response, error) {
-	req := c.c.NewRequest(c.name, "Login.UpdatePassword", in)
+func (c *loginMgrService) UpdatePassword(ctx context.Context, in *UpdatePasswordParam, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "LoginMgr.UpdatePassword", in)
 	out := new(unified.Response)
 	err := c.c.Call(ctx, req, out, opts...)
 	if err != nil {
@@ -101,45 +101,45 @@ func (c *loginService) UpdatePassword(ctx context.Context, in *UpdatePasswordPar
 	return out, nil
 }
 
-// Server API for Login service
+// Server API for LoginMgr service
 
-type LoginHandler interface {
+type LoginMgrHandler interface {
 	Verify(context.Context, *LoginParam, *unified.Response) error
 	GetLoginInfo(context.Context, *UserLoginInfo, *unified.Response) error
 	QueryUserMenuTree(context.Context, *UserLoginInfo, *unified.Response) error
 	UpdatePassword(context.Context, *UpdatePasswordParam, *unified.Response) error
 }
 
-func RegisterLoginHandler(s server.Server, hdlr LoginHandler, opts ...server.HandlerOption) error {
-	type login interface {
+func RegisterLoginMgrHandler(s server.Server, hdlr LoginMgrHandler, opts ...server.HandlerOption) error {
+	type loginMgr interface {
 		Verify(ctx context.Context, in *LoginParam, out *unified.Response) error
 		GetLoginInfo(ctx context.Context, in *UserLoginInfo, out *unified.Response) error
 		QueryUserMenuTree(ctx context.Context, in *UserLoginInfo, out *unified.Response) error
 		UpdatePassword(ctx context.Context, in *UpdatePasswordParam, out *unified.Response) error
 	}
-	type Login struct {
-		login
+	type LoginMgr struct {
+		loginMgr
 	}
-	h := &loginHandler{hdlr}
-	return s.Handle(s.NewHandler(&Login{h}, opts...))
+	h := &loginMgrHandler{hdlr}
+	return s.Handle(s.NewHandler(&LoginMgr{h}, opts...))
 }
 
-type loginHandler struct {
-	LoginHandler
+type loginMgrHandler struct {
+	LoginMgrHandler
 }
 
-func (h *loginHandler) Verify(ctx context.Context, in *LoginParam, out *unified.Response) error {
-	return h.LoginHandler.Verify(ctx, in, out)
+func (h *loginMgrHandler) Verify(ctx context.Context, in *LoginParam, out *unified.Response) error {
+	return h.LoginMgrHandler.Verify(ctx, in, out)
 }
 
-func (h *loginHandler) GetLoginInfo(ctx context.Context, in *UserLoginInfo, out *unified.Response) error {
-	return h.LoginHandler.GetLoginInfo(ctx, in, out)
+func (h *loginMgrHandler) GetLoginInfo(ctx context.Context, in *UserLoginInfo, out *unified.Response) error {
+	return h.LoginMgrHandler.GetLoginInfo(ctx, in, out)
 }
 
-func (h *loginHandler) QueryUserMenuTree(ctx context.Context, in *UserLoginInfo, out *unified.Response) error {
-	return h.LoginHandler.QueryUserMenuTree(ctx, in, out)
+func (h *loginMgrHandler) QueryUserMenuTree(ctx context.Context, in *UserLoginInfo, out *unified.Response) error {
+	return h.LoginMgrHandler.QueryUserMenuTree(ctx, in, out)
 }
 
-func (h *loginHandler) UpdatePassword(ctx context.Context, in *UpdatePasswordParam, out *unified.Response) error {
-	return h.LoginHandler.UpdatePassword(ctx, in, out)
+func (h *loginMgrHandler) UpdatePassword(ctx context.Context, in *UpdatePasswordParam, out *unified.Response) error {
+	return h.LoginMgrHandler.UpdatePassword(ctx, in, out)
 }

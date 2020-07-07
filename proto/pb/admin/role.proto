@@ -1,7 +1,23 @@
 syntax = "proto3";
 import "google/protobuf/timestamp.proto";
+import "unified.proto";
 option go_package = "github.com/ops-cn/go-devops/proto/admin";
 package admin;
+
+service RoleMgr {
+  // 查询数据
+  rpc Query(RoleQueryReq) returns(unified.Response) {}
+  // 查询指定数据
+  rpc Get(RoleReq) returns(unified.Response) {}
+  // 创建数据
+  rpc Create(Role) returns(unified.Response) {}
+  // 更新数据
+  rpc Update(RoleReq) returns(unified.Response) {}
+  // 删除数据
+  rpc Delete(Role) returns(unified.Response) {}
+  // 更新状态
+  rpc UpdateStatus(Role) returns(unified.Response) {}
+}
 
 message Role {
   string ID = 1;
@@ -22,4 +38,22 @@ message RoleQueryParam {
   string QueryValue = 3;
   string UserID = 4;
   int32  Status = 5;
+}
+message RoleQueryReq {
+  RoleQueryParam RoleQueryParam = 1;
+  RoleQueryOptions RoleQueryOptions = 2;
+}
+message RoleReq {
+  string CurrentID = 1;
+  Role Role = 2;
+  RoleQueryOptions RoleQueryOptions = 3;
+}
+
+message RoleQueryOptions {
+  repeated unified.OrderField OrderField = 1;
+}
+
+message RoleQueryResult {
+  repeated Role Data = 1;
+  unified.PaginationResult PageResult = 2;
 }

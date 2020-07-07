@@ -7,8 +7,15 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/golang/protobuf/ptypes/timestamp"
-	_ "github.com/ops-cn/go-devops/proto/unified"
+	unified "github.com/ops-cn/go-devops/proto/unified"
 	math "math"
+)
+
+import (
+	context "context"
+	api "github.com/micro/go-micro/v2/api"
+	client "github.com/micro/go-micro/v2/client"
+	server "github.com/micro/go-micro/v2/server"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -21,3 +28,165 @@ var _ = math.Inf
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ api.Endpoint
+var _ context.Context
+var _ client.Option
+var _ server.Option
+
+// Api Endpoints for MenuMgr service
+
+func NewMenuMgrEndpoints() []*api.Endpoint {
+	return []*api.Endpoint{}
+}
+
+// Client API for MenuMgr service
+
+type MenuMgrService interface {
+	// 查询数据
+	Query(ctx context.Context, in *MenuQueryReq, opts ...client.CallOption) (*unified.Response, error)
+	// 查询指定数据
+	Get(ctx context.Context, in *MenuReq, opts ...client.CallOption) (*unified.Response, error)
+	// 创建数据
+	Create(ctx context.Context, in *Menu, opts ...client.CallOption) (*unified.Response, error)
+	// 更新数据
+	Update(ctx context.Context, in *MenuReq, opts ...client.CallOption) (*unified.Response, error)
+	// 删除数据
+	Delete(ctx context.Context, in *Menu, opts ...client.CallOption) (*unified.Response, error)
+	// 更新状态
+	UpdateStatus(ctx context.Context, in *Menu, opts ...client.CallOption) (*unified.Response, error)
+}
+
+type menuMgrService struct {
+	c    client.Client
+	name string
+}
+
+func NewMenuMgrService(name string, c client.Client) MenuMgrService {
+	return &menuMgrService{
+		c:    c,
+		name: name,
+	}
+}
+
+func (c *menuMgrService) Query(ctx context.Context, in *MenuQueryReq, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "MenuMgr.Query", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *menuMgrService) Get(ctx context.Context, in *MenuReq, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "MenuMgr.Get", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *menuMgrService) Create(ctx context.Context, in *Menu, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "MenuMgr.Create", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *menuMgrService) Update(ctx context.Context, in *MenuReq, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "MenuMgr.Update", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *menuMgrService) Delete(ctx context.Context, in *Menu, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "MenuMgr.Delete", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *menuMgrService) UpdateStatus(ctx context.Context, in *Menu, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "MenuMgr.UpdateStatus", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Server API for MenuMgr service
+
+type MenuMgrHandler interface {
+	// 查询数据
+	Query(context.Context, *MenuQueryReq, *unified.Response) error
+	// 查询指定数据
+	Get(context.Context, *MenuReq, *unified.Response) error
+	// 创建数据
+	Create(context.Context, *Menu, *unified.Response) error
+	// 更新数据
+	Update(context.Context, *MenuReq, *unified.Response) error
+	// 删除数据
+	Delete(context.Context, *Menu, *unified.Response) error
+	// 更新状态
+	UpdateStatus(context.Context, *Menu, *unified.Response) error
+}
+
+func RegisterMenuMgrHandler(s server.Server, hdlr MenuMgrHandler, opts ...server.HandlerOption) error {
+	type menuMgr interface {
+		Query(ctx context.Context, in *MenuQueryReq, out *unified.Response) error
+		Get(ctx context.Context, in *MenuReq, out *unified.Response) error
+		Create(ctx context.Context, in *Menu, out *unified.Response) error
+		Update(ctx context.Context, in *MenuReq, out *unified.Response) error
+		Delete(ctx context.Context, in *Menu, out *unified.Response) error
+		UpdateStatus(ctx context.Context, in *Menu, out *unified.Response) error
+	}
+	type MenuMgr struct {
+		menuMgr
+	}
+	h := &menuMgrHandler{hdlr}
+	return s.Handle(s.NewHandler(&MenuMgr{h}, opts...))
+}
+
+type menuMgrHandler struct {
+	MenuMgrHandler
+}
+
+func (h *menuMgrHandler) Query(ctx context.Context, in *MenuQueryReq, out *unified.Response) error {
+	return h.MenuMgrHandler.Query(ctx, in, out)
+}
+
+func (h *menuMgrHandler) Get(ctx context.Context, in *MenuReq, out *unified.Response) error {
+	return h.MenuMgrHandler.Get(ctx, in, out)
+}
+
+func (h *menuMgrHandler) Create(ctx context.Context, in *Menu, out *unified.Response) error {
+	return h.MenuMgrHandler.Create(ctx, in, out)
+}
+
+func (h *menuMgrHandler) Update(ctx context.Context, in *MenuReq, out *unified.Response) error {
+	return h.MenuMgrHandler.Update(ctx, in, out)
+}
+
+func (h *menuMgrHandler) Delete(ctx context.Context, in *Menu, out *unified.Response) error {
+	return h.MenuMgrHandler.Delete(ctx, in, out)
+}
+
+func (h *menuMgrHandler) UpdateStatus(ctx context.Context, in *Menu, out *unified.Response) error {
+	return h.MenuMgrHandler.UpdateStatus(ctx, in, out)
+}

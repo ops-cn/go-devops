@@ -14,8 +14,8 @@ var APISet = wire.NewSet(
 	UserSet,
 )
 
-var loginClient proto.LoginService
+var loginMgrClient proto.LoginMgrService
 
 func Init() {
-	loginClient = proto.NewLoginService("ops-cn.admin", client.DefaultClient)
+	loginMgrClient = proto.NewLoginMgrService("ops-cn.admin", client.DefaultClient)
 }

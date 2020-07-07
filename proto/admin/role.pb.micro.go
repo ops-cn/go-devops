@@ -7,7 +7,15 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/golang/protobuf/ptypes/timestamp"
+	unified "github.com/ops-cn/go-devops/proto/unified"
 	math "math"
+)
+
+import (
+	context "context"
+	api "github.com/micro/go-micro/v2/api"
+	client "github.com/micro/go-micro/v2/client"
+	server "github.com/micro/go-micro/v2/server"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -20,3 +28,165 @@ var _ = math.Inf
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ api.Endpoint
+var _ context.Context
+var _ client.Option
+var _ server.Option
+
+// Api Endpoints for RoleMgr service
+
+func NewRoleMgrEndpoints() []*api.Endpoint {
+	return []*api.Endpoint{}
+}
+
+// Client API for RoleMgr service
+
+type RoleMgrService interface {
+	// 查询数据
+	Query(ctx context.Context, in *RoleQueryReq, opts ...client.CallOption) (*unified.Response, error)
+	// 查询指定数据
+	Get(ctx context.Context, in *RoleReq, opts ...client.CallOption) (*unified.Response, error)
+	// 创建数据
+	Create(ctx context.Context, in *Role, opts ...client.CallOption) (*unified.Response, error)
+	// 更新数据
+	Update(ctx context.Context, in *RoleReq, opts ...client.CallOption) (*unified.Response, error)
+	// 删除数据
+	Delete(ctx context.Context, in *Role, opts ...client.CallOption) (*unified.Response, error)
+	// 更新状态
+	UpdateStatus(ctx context.Context, in *Role, opts ...client.CallOption) (*unified.Response, error)
+}
+
+type roleMgrService struct {
+	c    client.Client
+	name string
+}
+
+func NewRoleMgrService(name string, c client.Client) RoleMgrService {
+	return &roleMgrService{
+		c:    c,
+		name: name,
+	}
+}
+
+func (c *roleMgrService) Query(ctx context.Context, in *RoleQueryReq, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "RoleMgr.Query", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *roleMgrService) Get(ctx context.Context, in *RoleReq, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "RoleMgr.Get", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *roleMgrService) Create(ctx context.Context, in *Role, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "RoleMgr.Create", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *roleMgrService) Update(ctx context.Context, in *RoleReq, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "RoleMgr.Update", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *roleMgrService) Delete(ctx context.Context, in *Role, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "RoleMgr.Delete", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *roleMgrService) UpdateStatus(ctx context.Context, in *Role, opts ...client.CallOption) (*unified.Response, error) {
+	req := c.c.NewRequest(c.name, "RoleMgr.UpdateStatus", in)
+	out := new(unified.Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Server API for RoleMgr service
+
+type RoleMgrHandler interface {
+	// 查询数据
+	Query(context.Context, *RoleQueryReq, *unified.Response) error
+	// 查询指定数据
+	Get(context.Context, *RoleReq, *unified.Response) error
+	// 创建数据
+	Create(context.Context, *Role, *unified.Response) error
+	// 更新数据
+	Update(context.Context, *RoleReq, *unified.Response) error
+	// 删除数据
+	Delete(context.Context, *Role, *unified.Response) error
+	// 更新状态
+	UpdateStatus(context.Context, *Role, *unified.Response) error
+}
+
+func RegisterRoleMgrHandler(s server.Server, hdlr RoleMgrHandler, opts ...server.HandlerOption) error {
+	type roleMgr interface {
+		Query(ctx context.Context, in *RoleQueryReq, out *unified.Response) error
+		Get(ctx context.Context, in *RoleReq, out *unified.Response) error
+		Create(ctx context.Context, in *Role, out *unified.Response) error
+		Update(ctx context.Context, in *RoleReq, out *unified.Response) error
+		Delete(ctx context.Context, in *Role, out *unified.Response) error
+		UpdateStatus(ctx context.Context, in *Role, out *unified.Response) error
+	}
+	type RoleMgr struct {
+		roleMgr
+	}
+	h := &roleMgrHandler{hdlr}
+	return s.Handle(s.NewHandler(&RoleMgr{h}, opts...))
+}
+
+type roleMgrHandler struct {
+	RoleMgrHandler
+}
+
+func (h *roleMgrHandler) Query(ctx context.Context, in *RoleQueryReq, out *unified.Response) error {
+	return h.RoleMgrHandler.Query(ctx, in, out)
+}
+
+func (h *roleMgrHandler) Get(ctx context.Context, in *RoleReq, out *unified.Response) error {
+	return h.RoleMgrHandler.Get(ctx, in, out)
+}
+
+func (h *roleMgrHandler) Create(ctx context.Context, in *Role, out *unified.Response) error {
+	return h.RoleMgrHandler.Create(ctx, in, out)
+}
+
+func (h *roleMgrHandler) Update(ctx context.Context, in *RoleReq, out *unified.Response) error {
+	return h.RoleMgrHandler.Update(ctx, in, out)
+}
+
+func (h *roleMgrHandler) Delete(ctx context.Context, in *Role, out *unified.Response) error {
+	return h.RoleMgrHandler.Delete(ctx, in, out)
+}
+
+func (h *roleMgrHandler) UpdateStatus(ctx context.Context, in *Role, out *unified.Response) error {
+	return h.RoleMgrHandler.UpdateStatus(ctx, in, out)
+}

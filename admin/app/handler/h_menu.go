@@ -2,10 +2,14 @@ package handler
 
 import (
 	"context"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/ops-cn/go-devops/common/noworker"
+	proto "github.com/ops-cn/go-devops/proto/admin"
+	"github.com/ops-cn/go-devops/proto/unified"
 	"os"
 
 	"github.com/google/wire"
+	"github.com/jinzhu/copier"
 	"github.com/ops-cn/go-devops/admin/app/model"
 	"github.com/ops-cn/go-devops/common/errors"
 	"github.com/ops-cn/go-devops/common/schema"
@@ -24,8 +28,8 @@ type Menu struct {
 }
 
 // InitData 初始化菜单数据
-func (a *Menu) InitData(ctx context.Context, dataFile string) error {
-	result, err := a.MenuModel.Query(ctx, schema.MenuQueryParam{
+func (menuMgr *Menu) InitData(ctx context.Context, dataFile string) error {
+	result, err := menuMgr.MenuModel.Query(ctx, schema.MenuQueryParam{
 		PaginationParam: schema.PaginationParam{OnlyCount: true},
 	})
 	if err != nil {
@@ -35,15 +39,15 @@ func (a *Menu) InitData(ctx context.Context, dataFile string) error {
 		return nil
 	}
 
-	data, err := a.readData(dataFile)
+	data, err := menuMgr.readData(dataFile)
 	if err != nil {
 		return err
 	}
 
-	return a.createMenus(ctx, "", data)
+	return menuMgr.createMenus(ctx, "", data)
 }
 
-func (a *Menu) readData(name string) (schema.MenuTrees, error) {
+func (menuMgr *Menu) readData(name string) (schema.MenuTrees, error) {
 	file, err := os.Open(name)
 	if err != nil {
 		return nil, err
@@ -57,8 +61,8 @@ func (a *Menu) readData(name string) (schema.MenuTrees, error) {
 	return data, err
 }
 
-func (a *Menu) createMenus(ctx context.Context, parentID string, list schema.MenuTrees) error {
-	return ExecTrans(ctx, a.TransModel, func(ctx context.Context) error {
+func (menuMgr *Menu) createMenus(ctx context.Context, parentID string, list schema.MenuTrees) error {
+	return ExecTrans(ctx, menuMgr.TransModel, func(ctx context.Context) error {
 		for _, item := range list {
 			sitem := schema.Menu{
 				Name:       item.Name,
@@ -74,48 +78,56 @@ func (a *Menu) createMenus(ctx context.Context, parentID string, list schema.Men
 				sitem.ShowStatus = v
 			}
 
-			nsitem, err := a.Create(ctx, sitem)
+			nsitem, err := menuMgr.CreateId(ctx, sitem)
 			if err != nil {
 				return err
 			}
 
 			if item.Children != nil && len(*item.Children) > 0 {
-				err := a.createMenus(ctx, nsitem.ID, *item.Children)
+				err := menuMgr.createMenus(ctx, nsitem.ID, *item.Children)
 				if err != nil {
 					return err
 				}
 			}
 		}
-
 		return nil
 	})
 }
 
 // Query 查询数据
-func (a *Menu) Query(ctx context.Context, params schema.MenuQueryParam, opts ...schema.MenuQueryOptions) (*schema.MenuQueryResult, error) {
-	menuActionResult, err := a.MenuActionModel.Query(ctx, schema.MenuActionQueryParam{})
+func (menuMgr *Menu) Query(ctx context.Context, req *proto.MenuQueryReq, res *unified.Response) error {
+	menuActionResult, err := menuMgr.MenuActionModel.Query(ctx, schema.MenuActionQueryParam{})
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	result, err := a.MenuModel.Query(ctx, params, opts...)
+	param := schema.MenuQueryParam{}
+	util.StructCopy(param, req.MenuQueryParam)
+	pp := schema.PaginationParam{}
+	rpp := req.MenuQueryParam.PaginationParam
+	util.StructCopy(pp, rpp)
+	param.PaginationParam = pp
+	opts := schema.MenuQueryOptions{}
+	result, err := menuMgr.MenuModel.Query(ctx, param, opts)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	result.Data.FillMenuAction(menuActionResult.Data.ToMenuIDMap())
-	return result, nil
+	pbResult := &proto.MenuQueryResult{}
+	util.StructCopy(pbResult, result)
+	res.Items, _ = ptypes.MarshalAny(pbResult)
+	return nil
 }
 
 // Get 查询指定数据
-func (a *Menu) Get(ctx context.Context, id string, opts ...schema.MenuQueryOptions) (*schema.Menu, error) {
-	item, err := a.MenuModel.Get(ctx, id, opts...)
+func (menuMgr *Menu) GetMenu(ctx context.Context, id string, opts ...schema.MenuQueryOptions) (*schema.Menu, error) {
+	item, err := menuMgr.MenuModel.Get(ctx, id, opts...)
 	if err != nil {
 		return nil, err
 	} else if item == nil {
 		return nil, errors.ErrNotFound
 	}
 
-	actions, err := a.QueryActions(ctx, id)
+	actions, err := menuMgr.QueryActions(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -123,10 +135,30 @@ func (a *Menu) Get(ctx context.Context, id string, opts ...schema.MenuQueryOptio
 
 	return item, nil
 }
+func (menuMgr *Menu) Get(ctx context.Context, req *proto.MenuReq, res *unified.Response) error {
+	opts := schema.MenuQueryOptions{}
+	copier.Copy(opts, req.MenuQueryOptions)
+	menu, err := menuMgr.MenuModel.Get(ctx, req.CurrentID, opts)
+	if err != nil {
+		return err
+	} else if menu == nil {
+		return errors.ErrNotFound
+	}
+
+	actions, err := menuMgr.QueryActions(ctx, req.CurrentID)
+	if err != nil {
+		return err
+	}
+	menu.Actions = actions
+	pbMenu := &proto.Menu{}
+	copier.Copy(pbMenu, menu)
+	res.Items, _ = ptypes.MarshalAny(pbMenu)
+	return nil
+}
 
 // QueryActions 查询动作数据
-func (a *Menu) QueryActions(ctx context.Context, id string) (schema.MenuActions, error) {
-	result, err := a.MenuActionModel.Query(ctx, schema.MenuActionQueryParam{
+func (menuMgr *Menu) QueryActions(ctx context.Context, id string) (schema.MenuActions, error) {
+	result, err := menuMgr.MenuActionModel.Query(ctx, schema.MenuActionQueryParam{
 		MenuID: id,
 	})
 	if err != nil {
@@ -135,7 +167,7 @@ func (a *Menu) QueryActions(ctx context.Context, id string) (schema.MenuActions,
 		return nil, nil
 	}
 
-	resourceResult, err := a.MenuActionResourceModel.Query(ctx, schema.MenuActionResourceQueryParam{
+	resourceResult, err := menuMgr.MenuActionResourceModel.Query(ctx, schema.MenuActionResourceQueryParam{
 		MenuID: id,
 	})
 	if err != nil {
@@ -147,8 +179,8 @@ func (a *Menu) QueryActions(ctx context.Context, id string) (schema.MenuActions,
 	return result.Data, nil
 }
 
-func (a *Menu) checkName(ctx context.Context, item schema.Menu) error {
-	result, err := a.MenuModel.Query(ctx, schema.MenuQueryParam{
+func (menuMgr *Menu) checkName(ctx context.Context, item schema.Menu) error {
+	result, err := menuMgr.MenuModel.Query(ctx, schema.MenuQueryParam{
 		PaginationParam: schema.PaginationParam{
 			OnlyCount: true,
 		},
@@ -164,25 +196,25 @@ func (a *Menu) checkName(ctx context.Context, item schema.Menu) error {
 }
 
 // Create 创建数据
-func (a *Menu) Create(ctx context.Context, item schema.Menu) (*schema.IDResult, error) {
-	if err := a.checkName(ctx, item); err != nil {
+func (menuMgr *Menu) CreateId(ctx context.Context, item schema.Menu) (*schema.IDResult, error) {
+	if err := menuMgr.checkName(ctx, item); err != nil {
 		return nil, err
 	}
 
-	parentPath, err := a.getParentPath(ctx, item.ParentID)
+	parentPath, err := menuMgr.getParentPath(ctx, item.ParentID)
 	if err != nil {
 		return nil, err
 	}
 	item.ParentPath = parentPath
 	item.ID = noworker.NewID()
 
-	err = ExecTrans(ctx, a.TransModel, func(ctx context.Context) error {
-		err := a.createActions(ctx, item.ID, item.Actions)
+	err = ExecTrans(ctx, menuMgr.TransModel, func(ctx context.Context) error {
+		err := menuMgr.createActions(ctx, item.ID, item.Actions)
 		if err != nil {
 			return err
 		}
 
-		return a.MenuModel.Create(ctx, item)
+		return menuMgr.MenuModel.Create(ctx, item)
 	})
 	if err != nil {
 		return nil, err
@@ -190,13 +222,45 @@ func (a *Menu) Create(ctx context.Context, item schema.Menu) (*schema.IDResult, 
 
 	return schema.NewIDResult(item.ID), nil
 }
+func (menuMgr *Menu) Create(ctx context.Context, req *proto.Menu, res *unified.Response) error {
+	menu := schema.Menu{}
+	copier.Copy(menu, req)
+	if err := menuMgr.checkName(ctx, menu); err != nil {
+		return err
+	}
+
+	parentPath, err := menuMgr.getParentPath(ctx, menu.ParentID)
+	if err != nil {
+		return err
+	}
+	menu.ParentPath = parentPath
+	menu.ID = noworker.NewID()
+
+	err = ExecTrans(ctx, menuMgr.TransModel, func(ctx context.Context) error {
+		err := menuMgr.createActions(ctx, menu.ID, menu.Actions)
+		if err != nil {
+			return err
+		}
+
+		return menuMgr.MenuModel.Create(ctx, menu)
+	})
+	if err != nil {
+		return err
+	}
+	newId := schema.NewIDResult(menu.ID)
+	pbMenu := &proto.Menu{
+		ID: newId.ID,
+	}
+	res.Items, _ = ptypes.MarshalAny(pbMenu)
+	return nil
+}
 
 // 创建动作数据
-func (a *Menu) createActions(ctx context.Context, menuID string, items schema.MenuActions) error {
+func (menuMgr *Menu) createActions(ctx context.Context, menuID string, items schema.MenuActions) error {
 	for _, item := range items {
 		item.ID = noworker.NewID()
 		item.MenuID = menuID
-		err := a.MenuActionModel.Create(ctx, *item)
+		err := menuMgr.MenuActionModel.Create(ctx, *item)
 		if err != nil {
 			return err
 		}
@@ -204,7 +268,7 @@ func (a *Menu) createActions(ctx context.Context, menuID string, items schema.Me
 		for _, ritem := range item.Resources {
 			ritem.ID = noworker.NewID()
 			ritem.ActionID = item.ID
-			err := a.MenuActionResourceModel.Create(ctx, *ritem)
+			err := menuMgr.MenuActionResourceModel.Create(ctx, *ritem)
 			if err != nil {
 				return err
 			}
@@ -215,22 +279,22 @@ func (a *Menu) createActions(ctx context.Context, menuID string, items schema.Me
 }
 
 // 获取父级路径
-func (a *Menu) getParentPath(ctx context.Context, parentID string) (string, error) {
+func (menuMgr *Menu) getParentPath(ctx context.Context, parentID string) (string, error) {
 	if parentID == "" {
 		return "", nil
 	}
 
-	pitem, err := a.MenuModel.Get(ctx, parentID)
+	pitem, err := menuMgr.MenuModel.Get(ctx, parentID)
 	if err != nil {
 		return "", err
 	} else if pitem == nil {
 		return "", errors.ErrInvalidParent
 	}
 
-	return a.joinParentPath(pitem.ParentPath, pitem.ID), nil
+	return menuMgr.joinParentPath(pitem.ParentPath, pitem.ID), nil
 }
 
-func (a *Menu) joinParentPath(parent, id string) string {
+func (menuMgr *Menu) joinParentPath(parent, id string) string {
 	if parent != "" {
 		return parent + "/" + id
 	}
@@ -238,67 +302,70 @@ func (a *Menu) joinParentPath(parent, id string) string {
 }
 
 // Update 更新数据
-func (a *Menu) Update(ctx context.Context, id string, item schema.Menu) error {
-	if id == item.ParentID {
+func (menuMgr *Menu) Update(ctx context.Context, req *proto.MenuReq, res *unified.Response) error {
+	menu := schema.Menu{}
+	copier.Copy(menu, req.Menu)
+
+	if req.CurrentID == menu.ParentID {
 		return errors.ErrInvalidParent
 	}
 
-	oldItem, err := a.Get(ctx, id)
+	oldItem, err := menuMgr.GetMenu(ctx, req.CurrentID)
 	if err != nil {
 		return err
 	} else if oldItem == nil {
 		return errors.ErrNotFound
-	} else if oldItem.Name != item.Name {
-		if err := a.checkName(ctx, item); err != nil {
+	} else if oldItem.Name != menu.Name {
+		if err := menuMgr.checkName(ctx, menu); err != nil {
 			return err
 		}
 	}
 
-	item.ID = oldItem.ID
-	item.Creator = oldItem.Creator
-	item.CreatedAt = oldItem.CreatedAt
+	menu.ID = oldItem.ID
+	menu.Creator = oldItem.Creator
+	menu.CreatedAt = oldItem.CreatedAt
 
-	if oldItem.ParentID != item.ParentID {
-		parentPath, err := a.getParentPath(ctx, item.ParentID)
+	if oldItem.ParentID != menu.ParentID {
+		parentPath, err := menuMgr.getParentPath(ctx, menu.ParentID)
 		if err != nil {
 			return err
 		}
-		item.ParentPath = parentPath
+		menu.ParentPath = parentPath
 	} else {
-		item.ParentPath = oldItem.ParentPath
+		menu.ParentPath = oldItem.ParentPath
 	}
 
-	return ExecTrans(ctx, a.TransModel, func(ctx context.Context) error {
-		err := a.updateActions(ctx, id, oldItem.Actions, item.Actions)
+	return ExecTrans(ctx, menuMgr.TransModel, func(ctx context.Context) error {
+		err := menuMgr.updateActions(ctx, req.CurrentID, oldItem.Actions, menu.Actions)
 		if err != nil {
 			return err
 		}
 
-		err = a.updateChildParentPath(ctx, *oldItem, item)
+		err = menuMgr.updateChildParentPath(ctx, *oldItem, menu)
 		if err != nil {
 			return err
 		}
 
-		return a.MenuModel.Update(ctx, id, item)
+		return menuMgr.MenuModel.Update(ctx, req.CurrentID, menu)
 	})
 }
 
 // 更新动作数据
-func (a *Menu) updateActions(ctx context.Context, menuID string, oldItems, newItems schema.MenuActions) error {
-	addActions, delActions, updateActions := a.compareActions(ctx, oldItems, newItems)
+func (menuMgr *Menu) updateActions(ctx context.Context, menuID string, oldItems, newItems schema.MenuActions) error {
+	addActions, delActions, updateActions := menuMgr.compareActions(ctx, oldItems, newItems)
 
-	err := a.createActions(ctx, menuID, addActions)
+	err := menuMgr.createActions(ctx, menuID, addActions)
 	if err != nil {
 		return err
 	}
 
 	for _, item := range delActions {
-		err := a.MenuActionModel.Delete(ctx, item.ID)
+		err := menuMgr.MenuActionModel.Delete(ctx, item.ID)
 		if err != nil {
 			return err
 		}
 
-		err = a.MenuActionResourceModel.DeleteByActionID(ctx, item.ID)
+		err = menuMgr.MenuActionResourceModel.DeleteByActionID(ctx, item.ID)
 		if err != nil {
 			return err
 		}
@@ -310,25 +377,25 @@ func (a *Menu) updateActions(ctx context.Context, menuID string, oldItems, newIt
 		// 只更新动作名称
 		if item.Name != oitem.Name {
 			oitem.Name = item.Name
-			err := a.MenuActionModel.Update(ctx, item.ID, *oitem)
+			err := menuMgr.MenuActionModel.Update(ctx, item.ID, *oitem)
 			if err != nil {
 				return err
 			}
 		}
 
 		// 计算需要更新的资源配置（只包括新增和删除的，更新的不关心）
-		addResources, delResources := a.compareResources(ctx, oitem.Resources, item.Resources)
+		addResources, delResources := menuMgr.compareResources(ctx, oitem.Resources, item.Resources)
 		for _, aritem := range addResources {
 			aritem.ID = noworker.NewID()
 			aritem.ActionID = oitem.ID
-			err := a.MenuActionResourceModel.Create(ctx, *aritem)
+			err := menuMgr.MenuActionResourceModel.Create(ctx, *aritem)
 			if err != nil {
 				return err
 			}
 		}
 
 		for _, ditem := range delResources {
-			err := a.MenuActionResourceModel.Delete(ctx, ditem.ID)
+			err := menuMgr.MenuActionResourceModel.Delete(ctx, ditem.ID)
 			if err != nil {
 				return err
 			}
@@ -339,7 +406,7 @@ func (a *Menu) updateActions(ctx context.Context, menuID string, oldItems, newIt
 }
 
 // 对比动作列表
-func (a *Menu) compareActions(ctx context.Context, oldActions, newActions schema.MenuActions) (addList, delList, updateList schema.MenuActions) {
+func (menuMgr *Menu) compareActions(ctx context.Context, oldActions, newActions schema.MenuActions) (addList, delList, updateList schema.MenuActions) {
 	mOldActions := oldActions.ToMap()
 	mNewActions := newActions.ToMap()
 
@@ -359,7 +426,7 @@ func (a *Menu) compareActions(ctx context.Context, oldActions, newActions schema
 }
 
 // 对比资源列表
-func (a *Menu) compareResources(ctx context.Context, oldResources, newResources schema.MenuActionResources) (addList, delList schema.MenuActionResources) {
+func (menuMgr *Menu) compareResources(ctx context.Context, oldResources, newResources schema.MenuActionResources) (addList, delList schema.MenuActionResources) {
 	mOldResources := oldResources.ToMap()
 	mNewResources := newResources.ToMap()
 
@@ -378,22 +445,22 @@ func (a *Menu) compareResources(ctx context.Context, oldResources, newResources 
 }
 
 // 检查并更新下级节点的父级路径
-func (a *Menu) updateChildParentPath(ctx context.Context, oldItem, newItem schema.Menu) error {
+func (menuMgr *Menu) updateChildParentPath(ctx context.Context, oldItem, newItem schema.Menu) error {
 	if oldItem.ParentID == newItem.ParentID {
 		return nil
 	}
 
-	opath := a.joinParentPath(oldItem.ParentPath, oldItem.ID)
-	result, err := a.MenuModel.Query(NewNoTrans(ctx), schema.MenuQueryParam{
+	opath := menuMgr.joinParentPath(oldItem.ParentPath, oldItem.ID)
+	result, err := menuMgr.MenuModel.Query(NewNoTrans(ctx), schema.MenuQueryParam{
 		PrefixParentPath: opath,
 	})
 	if err != nil {
 		return err
 	}
 
-	npath := a.joinParentPath(newItem.ParentPath, newItem.ID)
+	npath := menuMgr.joinParentPath(newItem.ParentPath, newItem.ID)
 	for _, menu := range result.Data {
-		err = a.MenuModel.UpdateParentPath(ctx, menu.ID, npath+menu.ParentPath[len(opath):])
+		err = menuMgr.MenuModel.UpdateParentPath(ctx, menu.ID, npath+menu.ParentPath[len(opath):])
 		if err != nil {
 			return err
 		}
@@ -402,17 +469,17 @@ func (a *Menu) updateChildParentPath(ctx context.Context, oldItem, newItem schem
 }
 
 // Delete 删除数据
-func (a *Menu) Delete(ctx context.Context, id string) error {
-	oldItem, err := a.MenuModel.Get(ctx, id)
+func (menuMgr *Menu) Delete(ctx context.Context, req *proto.Menu, res *unified.Response) error {
+	oldItem, err := menuMgr.MenuModel.Get(ctx, req.ID)
 	if err != nil {
 		return err
 	} else if oldItem == nil {
 		return errors.ErrNotFound
 	}
 
-	result, err := a.MenuModel.Query(ctx, schema.MenuQueryParam{
+	result, err := menuMgr.MenuModel.Query(ctx, schema.MenuQueryParam{
 		PaginationParam: schema.PaginationParam{OnlyCount: true},
-		ParentID:        &id,
+		ParentID:        &req.ID,
 	})
 	if err != nil {
 		return err
@@ -420,29 +487,29 @@ func (a *Menu) Delete(ctx context.Context, id string) error {
 		return errors.ErrNotAllowDeleteWithChild
 	}
 
-	return ExecTrans(ctx, a.TransModel, func(ctx context.Context) error {
-		err = a.MenuActionResourceModel.DeleteByMenuID(ctx, id)
+	return ExecTrans(ctx, menuMgr.TransModel, func(ctx context.Context) error {
+		err = menuMgr.MenuActionResourceModel.DeleteByMenuID(ctx, req.ID)
 		if err != nil {
 			return err
 		}
 
-		err := a.MenuActionModel.DeleteByMenuID(ctx, id)
+		err := menuMgr.MenuActionModel.DeleteByMenuID(ctx, req.ID)
 		if err != nil {
 			return err
 		}
 
-		return a.MenuModel.Delete(ctx, id)
+		return menuMgr.MenuModel.Delete(ctx, req.ID)
 	})
 }
 
 // UpdateStatus 更新状态
-func (a *Menu) UpdateStatus(ctx context.Context, id string, status int) error {
-	oldItem, err := a.MenuModel.Get(ctx, id)
+func (menuMgr *Menu) UpdateStatus(ctx context.Context, req *proto.Menu, res *unified.Response) error {
+	oldItem, err := menuMgr.MenuModel.Get(ctx, req.ID)
 	if err != nil {
 		return err
 	} else if oldItem == nil {
 		return errors.ErrNotFound
 	}
 
-	return a.MenuModel.UpdateStatus(ctx, id, status)
+	return menuMgr.MenuModel.UpdateStatus(ctx, req.ID, int(req.Status))
 }

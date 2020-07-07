@@ -75,7 +75,7 @@ func (a *Login) Login(c *gin.Context) {
 		UserName: item.UserName,
 		Password: item.Password,
 	}
-	rsp, err := loginClient.Verify(ctx, param)
+	rsp, err := loginMgrClient.Verify(ctx, param)
 	fmt.Print(rsp)
 	user := &proto.User{}
 	ptypes.UnmarshalAny(rsp.Items, user)
@@ -133,7 +133,7 @@ func (a *Login) GetUserInfo(c *gin.Context) {
 	param := &proto.UserLoginInfo{
 		UserID: ginplus.GetUserID(c),
 	}
-	rsp, err := loginClient.GetLoginInfo(ctx, param)
+	rsp, err := loginMgrClient.GetLoginInfo(ctx, param)
 	userInfo := &proto.UserLoginInfo{}
 	ptypes.UnmarshalAny(rsp.Items, userInfo)
 	if err != nil {
@@ -149,7 +149,7 @@ func (a *Login) QueryUserMenuTree(c *gin.Context) {
 	param := &proto.UserLoginInfo{
 		UserID: ginplus.GetUserID(c),
 	}
-	rsp, err := loginClient.QueryUserMenuTree(ctx, param)
+	rsp, err := loginMgrClient.QueryUserMenuTree(ctx, param)
 	if err != nil {
 		ginplus.ResError(c, err)
 		return
@@ -175,7 +175,7 @@ func (a *Login) UpdatePassword(c *gin.Context) {
 		NewPassword: item.NewPassword,
 	}
 
-	_, err := loginClient.UpdatePassword(ctx, param)
+	_, err := loginMgrClient.UpdatePassword(ctx, param)
 	if err != nil {
 		ginplus.ResError(c, err)
 		return

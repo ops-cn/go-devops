@@ -4,6 +4,24 @@ import "unified.proto";
 option go_package = "github.com/ops-cn/go-devops/proto/admin";
 package admin;
 
+service MenuMgr {
+  // 查询数据
+  rpc Query(MenuQueryReq) returns(unified.Response) {}
+  // 查询指定数据
+  rpc Get(MenuReq) returns(unified.Response) {}
+  // 创建数据
+  rpc Create(Menu) returns(unified.Response) {}
+  // 更新数据
+  rpc Update(MenuReq) returns(unified.Response) {}
+  // 删除数据
+  rpc Delete(Menu) returns(unified.Response) {}
+  // 更新状态
+  rpc UpdateStatus(Menu) returns(unified.Response) {}
+}
+message DataFile {
+  string DataFile = 1;
+}
+
 message Menu {
   string ID = 1;
   string Name = 2;
@@ -35,6 +53,16 @@ message MenuActionResource {
   string Path = 4;
 }
 
+message MenuQueryReq {
+  MenuQueryParam MenuQueryParam = 1;
+  MenuQueryOptions MenuQueryOptions = 2;
+}
+message MenuReq {
+  string CurrentID = 1;
+  Menu Menu = 2;
+  MenuQueryOptions MenuQueryOptions = 3;
+}
+
 message MenuQueryParam {
   unified.PaginationParam PaginationParam = 1;
   repeated string IDs = 2;
@@ -45,6 +73,11 @@ message MenuQueryParam {
   int32 ShowStatus = 7;
   int32 Status = 8;
 }
+
+message MenuQueryOptions {
+  repeated unified.OrderField OrderField = 1;
+}
+
 
 message MenuQueryResult {
   repeated Menu Data = 1;
@@ -65,9 +98,9 @@ message MenuTree {
   repeated MenuTree Children = 11;
 }
 message MenuActions {
-  repeated MenuAction MenuAction=1;
+  repeated MenuAction MenuAction = 1;
 }
 
 message MenuTrees {
-  repeated MenuTree MenuTree=1;
+  repeated MenuTree MenuTree = 1;
 }
