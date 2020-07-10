@@ -7,8 +7,8 @@ package injector
 
 import (
 	"github.com/ops-cn/go-devops/admin/app/model/impl/gorm/model"
+	"github.com/ops-cn/go-devops/admin/app/module/adapter"
 	admin2 "github.com/ops-cn/go-devops/gin-api/app/handler/admin"
-	"github.com/ops-cn/go-devops/gin-api/app/module/adapter"
 	"github.com/ops-cn/go-devops/gin-api/app/router"
 	"github.com/ops-cn/go-devops/gin-api/app/service/impl/admin"
 )
@@ -53,70 +53,29 @@ func BuildInjector() (*Injector, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	menu := &model.Menu{
-		DB: db,
-	}
-	menuAction := &model.MenuAction{
-		DB: db,
-	}
 	login := &admin.Login{
-		Auth:            auther,
-		UserModel:       user,
-		UserRoleModel:   userRole,
-		RoleModel:       role,
-		RoleMenuModel:   roleMenu,
-		MenuModel:       menu,
-		MenuActionModel: menuAction,
+		Auth: auther,
 	}
 	adminLogin := &admin2.Login{
 		LoginBll: login,
 	}
-	trans := &model.Trans{
-		DB: db,
-	}
-	adminMenu := &admin.Menu{
-		TransModel:              trans,
-		MenuModel:               menu,
-		MenuActionModel:         menuAction,
-		MenuActionResourceModel: menuActionResource,
-	}
-	menu2 := &admin2.Menu{
-		MenuBll: adminMenu,
-	}
-	adminRole := &admin.Role{
-		Enforcer:      syncedEnforcer,
-		TransModel:    trans,
-		RoleModel:     role,
-		RoleMenuModel: roleMenu,
-		UserModel:     user,
-	}
-	role2 := &admin2.Role{
-		RoleBll: adminRole,
-	}
-	adminUser := &admin.User{
-		Enforcer:      syncedEnforcer,
-		TransModel:    trans,
-		UserModel:     user,
-		UserRoleModel: userRole,
-		RoleModel:     role,
-	}
-	user2 := &admin2.User{
-		UserBll: adminUser,
-	}
+	menu := &admin2.Menu{}
+	adminRole := &admin2.Role{}
+	adminUser := &admin2.User{}
 	routerRouter := &router.Router{
 		Auth:           auther,
 		CasbinEnforcer: syncedEnforcer,
 		LoginAPI:       adminLogin,
-		MenuAPI:        menu2,
-		RoleAPI:        role2,
-		UserAPI:        user2,
+		MenuAPI:        menu,
+		RoleAPI:        adminRole,
+		UserAPI:        adminUser,
 	}
 	engine := InitGinEngine(routerRouter)
 	injector := &Injector{
 		Engine:         engine,
 		Auth:           auther,
 		CasbinEnforcer: syncedEnforcer,
-		MenuBll:        adminMenu,
+		MenuWeb:        menu,
 	}
 	return injector, func() {
 		cleanup3()

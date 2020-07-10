@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
 	"github.com/ops-cn/go-devops/common/auth"
-	service "github.com/ops-cn/go-devops/gin-api/app/service/admin"
+	"github.com/ops-cn/go-devops/gin-api/app/handler/admin"
 )
 
 // InjectorSet 注入Injector
@@ -16,5 +16,5 @@ type Injector struct {
 	Engine         *gin.Engine
 	Auth           auth.Auther
 	CasbinEnforcer *casbin.SyncedEnforcer
-	MenuBll        service.IMenu
+	MenuWeb        *admin.Menu
 }

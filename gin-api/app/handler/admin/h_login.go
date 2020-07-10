@@ -24,9 +24,9 @@ type Login struct {
 }
 
 // GetCaptcha 获取验证码信息
-func (a *Login) GetCaptcha(c *gin.Context) {
+func (loginWeb *Login) GetCaptcha(c *gin.Context) {
 	ctx := c.Request.Context()
-	item, err := a.LoginBll.GetCaptcha(ctx, config.C.Captcha.Length)
+	item, err := loginWeb.LoginBll.GetCaptcha(ctx, config.C.Captcha.Length)
 	if err != nil {
 		ginplus.ResError(c, err)
 		return
@@ -36,7 +36,7 @@ func (a *Login) GetCaptcha(c *gin.Context) {
 }
 
 // ResCaptcha 响应图形验证码
-func (a *Login) ResCaptcha(c *gin.Context) {
+func (loginWeb *Login) ResCaptcha(c *gin.Context) {
 	ctx := c.Request.Context()
 	captchaID := c.Query("id")
 	if captchaID == "" {
@@ -52,14 +52,14 @@ func (a *Login) ResCaptcha(c *gin.Context) {
 	}
 
 	cfg := config.C.Captcha
-	err := a.LoginBll.ResCaptcha(ctx, c.Writer, captchaID, cfg.Width, cfg.Height)
+	err := loginWeb.LoginBll.ResCaptcha(ctx, c.Writer, captchaID, cfg.Width, cfg.Height)
 	if err != nil {
 		ginplus.ResError(c, err)
 	}
 }
 
 // Login 用户登录
-func (a *Login) Login(c *gin.Context) {
+func (loginWeb *Login) Login(c *gin.Context) {
 	ctx := c.Request.Context()
 	var item schema.LoginParam
 	if err := ginplus.ParseJSON(c, &item); err != nil {
@@ -79,7 +79,7 @@ func (a *Login) Login(c *gin.Context) {
 	fmt.Print(rsp)
 	user := &proto.User{}
 	ptypes.UnmarshalAny(rsp.Items, user)
-	//user, err := a.LoginBll.Verify(ctx, item.UserName, item.Password)
+	//user, err := loginWeb.LoginBll.Verify(ctx, item.UserName, item.Password)
 
 	if err != nil {
 		ginplus.ResError(c, err)
@@ -91,7 +91,7 @@ func (a *Login) Login(c *gin.Context) {
 	ginplus.SetUserID(c, userID)
 
 	ctx = logger.NewUserIDContext(ctx, userID)
-	tokenInfo, err := a.LoginBll.GenerateToken(ctx, userID)
+	tokenInfo, err := loginWeb.LoginBll.GenerateToken(ctx, userID)
 	if err != nil {
 		ginplus.ResError(c, err)
 		return
@@ -102,12 +102,12 @@ func (a *Login) Login(c *gin.Context) {
 }
 
 // Logout 用户登出
-func (a *Login) Logout(c *gin.Context) {
+func (loginWeb *Login) Logout(c *gin.Context) {
 	ctx := c.Request.Context()
 	// 检查用户是否处于登录状态，如果是则执行销毁
 	userID := ginplus.GetUserID(c)
 	if userID != "" {
-		err := a.LoginBll.DestroyToken(ctx, ginplus.GetToken(c))
+		err := loginWeb.LoginBll.DestroyToken(ctx, ginplus.GetToken(c))
 		if err != nil {
 			logger.Errorf(ctx, err.Error())
 		}
@@ -117,9 +117,9 @@ func (a *Login) Logout(c *gin.Context) {
 }
 
 // RefreshToken 刷新令牌
-func (a *Login) RefreshToken(c *gin.Context) {
+func (loginWeb *Login) RefreshToken(c *gin.Context) {
 	ctx := c.Request.Context()
-	tokenInfo, err := a.LoginBll.GenerateToken(ctx, ginplus.GetUserID(c))
+	tokenInfo, err := loginWeb.LoginBll.GenerateToken(ctx, ginplus.GetUserID(c))
 	if err != nil {
 		ginplus.ResError(c, err)
 		return
@@ -128,7 +128,7 @@ func (a *Login) RefreshToken(c *gin.Context) {
 }
 
 // GetUserInfo 获取当前用户信息
-func (a *Login) GetUserInfo(c *gin.Context) {
+func (loginWeb *Login) GetUserInfo(c *gin.Context) {
 	ctx := c.Request.Context()
 	param := &proto.UserLoginInfo{
 		UserID: ginplus.GetUserID(c),
@@ -144,7 +144,7 @@ func (a *Login) GetUserInfo(c *gin.Context) {
 }
 
 // QueryUserMenuTree 查询当前用户菜单树
-func (a *Login) QueryUserMenuTree(c *gin.Context) {
+func (loginWeb *Login) QueryUserMenuTree(c *gin.Context) {
 	ctx := c.Request.Context()
 	param := &proto.UserLoginInfo{
 		UserID: ginplus.GetUserID(c),
@@ -162,7 +162,7 @@ func (a *Login) QueryUserMenuTree(c *gin.Context) {
 }
 
 // UpdatePassword 更新个人密码
-func (a *Login) UpdatePassword(c *gin.Context) {
+func (loginWeb *Login) UpdatePassword(c *gin.Context) {
 	ctx := c.Request.Context()
 	var item schema.UpdatePasswordParam
 	if err := ginplus.ParseJSON(c, &item); err != nil {

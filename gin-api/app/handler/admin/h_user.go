@@ -1,7 +1,9 @@
 package admin
 
 import (
-	"github.com/ops-cn/go-devops/gin-api/app/service/admin"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/jinzhu/copier"
+	proto "github.com/ops-cn/go-devops/proto/admin"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -16,13 +18,12 @@ var UserSet = wire.NewSet(wire.Struct(new(User), "*"))
 
 // User 用户管理
 type User struct {
-	UserBll admin.IUser
 }
 
 // Query 查询数据
-func (a *User) Query(c *gin.Context) {
+func (userWeb *User) Query(c *gin.Context) {
 	ctx := c.Request.Context()
-	var params schema.UserQueryParam
+	var params proto.UserQueryParam
 	if err := ginplus.ParseQuery(c, &params); err != nil {
 		ginplus.ResError(c, err)
 		return
@@ -30,58 +31,77 @@ func (a *User) Query(c *gin.Context) {
 	if v := c.Query("roleIDs"); v != "" {
 		params.RoleIDs = strings.Split(v, ",")
 	}
+	orderFields := schema.NewOrderFields(schema.NewOrderField("sequence", schema.OrderByDESC))
+	opts := &proto.UserQueryOptions{}
+	copier.Copy(opts, orderFields)
 
-	params.Pagination = true
-	result, err := a.UserBll.QueryShow(ctx, params)
+	params.PaginationParam.Pagination = true
+	req := &proto.UserQueryReq{}
+	req.UserQueryOptions = opts
+	req.UserQueryParam = &params
+	rsp, err := userMgrClient.Query(ctx, req)
 	if err != nil {
 		ginplus.ResError(c, err)
 		return
 	}
+	pbResult := &proto.UserQueryResult{}
+	ptypes.UnmarshalAny(rsp.Items, pbResult)
+	result := &schema.UserQueryResult{}
+
 	ginplus.ResPage(c, result.Data, result.PageResult)
 }
 
 // Get 查询指定数据
-func (a *User) Get(c *gin.Context) {
+func (userWeb *User) Get(c *gin.Context) {
 	ctx := c.Request.Context()
-	item, err := a.UserBll.Get(ctx, c.Param("id"))
+	rsp, err := userMgrClient.Get(ctx, &proto.UserReq{
+		CurrentID: c.Param("id"),
+	})
 	if err != nil {
 		ginplus.ResError(c, err)
 		return
 	}
-	ginplus.ResSuccess(c, item.CleanSecure())
+	pbUser := &proto.User{}
+	ptypes.UnmarshalAny(rsp.Items, pbUser)
+	user := schema.User{}
+	copier.Copy(user, pbUser)
+	ginplus.ResSuccess(c, user.CleanSecure())
 }
 
 // Create 创建数据
-func (a *User) Create(c *gin.Context) {
+func (userWeb *User) Create(c *gin.Context) {
 	ctx := c.Request.Context()
-	var item schema.User
-	if err := ginplus.ParseJSON(c, &item); err != nil {
+	var user proto.User
+	if err := ginplus.ParseJSON(c, &user); err != nil {
 		ginplus.ResError(c, err)
 		return
-	} else if item.Password == "" {
+	} else if user.Password == "" {
 		ginplus.ResError(c, errors.New400Response("密码不能为空"))
 		return
 	}
 
-	item.Creator = ginplus.GetUserID(c)
-	result, err := a.UserBll.Create(ctx, item)
+	user.Creator = ginplus.GetUserID(c)
+	rsp, err := userMgrClient.Create(ctx, &user)
 	if err != nil {
 		ginplus.ResError(c, err)
 		return
 	}
-	ginplus.ResSuccess(c, result)
+	ginplus.ResSuccess(c, rsp)
 }
 
 // Update 更新数据
-func (a *User) Update(c *gin.Context) {
+func (userWeb *User) Update(c *gin.Context) {
 	ctx := c.Request.Context()
-	var item schema.User
-	if err := ginplus.ParseJSON(c, &item); err != nil {
+	var user proto.User
+	if err := ginplus.ParseJSON(c, &user); err != nil {
 		ginplus.ResError(c, err)
 		return
 	}
 
-	err := a.UserBll.Update(ctx, c.Param("id"), item)
+	_, err := userMgrClient.Update(ctx, &proto.UserReq{
+		CurrentID: c.Param("id"),
+		User:      &user,
+	})
 	if err != nil {
 		ginplus.ResError(c, err)
 		return
@@ -90,9 +110,11 @@ func (a *User) Update(c *gin.Context) {
 }
 
 // Delete 删除数据
-func (a *User) Delete(c *gin.Context) {
+func (userWeb *User) Delete(c *gin.Context) {
 	ctx := c.Request.Context()
-	err := a.UserBll.Delete(ctx, c.Param("id"))
+	_, err := userMgrClient.Delete(ctx, &proto.User{
+		ID: c.Param("id"),
+	})
 	if err != nil {
 		ginplus.ResError(c, err)
 		return
@@ -101,9 +123,12 @@ func (a *User) Delete(c *gin.Context) {
 }
 
 // Enable 启用数据
-func (a *User) Enable(c *gin.Context) {
+func (userWeb *User) Enable(c *gin.Context) {
 	ctx := c.Request.Context()
-	err := a.UserBll.UpdateStatus(ctx, c.Param("id"), 1)
+	_, err := userMgrClient.UpdateStatus(ctx, &proto.User{
+		ID:     c.Param("id"),
+		Status: 1,
+	})
 	if err != nil {
 		ginplus.ResError(c, err)
 		return
@@ -112,9 +137,12 @@ func (a *User) Enable(c *gin.Context) {
 }
 
 // Disable 禁用数据
-func (a *User) Disable(c *gin.Context) {
+func (userWeb *User) Disable(c *gin.Context) {
 	ctx := c.Request.Context()
-	err := a.UserBll.UpdateStatus(ctx, c.Param("id"), 2)
+	_, err := userMgrClient.UpdateStatus(ctx, &proto.User{
+		ID:     c.Param("id"),
+		Status: 2,
+	})
 	if err != nil {
 		ginplus.ResError(c, err)
 		return

@@ -7,7 +7,8 @@ import (
 	api "github.com/ops-cn/go-devops/gin-api/app/handler/admin"
 	// "github.com/ops-cn/go-devops/admin/app/api/mock"
 	"github.com/google/wire"
-	"github.com/ops-cn/go-devops/gin-api/app/module/adapter"
+	gormModel "github.com/ops-cn/go-devops/admin/app/model/impl/gorm/model"
+	"github.com/ops-cn/go-devops/admin/app/module/adapter"
 	"github.com/ops-cn/go-devops/gin-api/app/router"
 	service "github.com/ops-cn/go-devops/gin-api/app/service/impl/admin"
 )
@@ -16,9 +17,9 @@ import (
 func BuildInjector() (*Injector, func(), error) {
 	// 默认使用gorm存储注入，这里可使用 InitMongoDB & mongoModel.ModelSet 替换为 gorm 存储
 	wire.Build(
-		//InitGormDB,
-		//gormModel.ModelSet,
-		// InitMongoDB,
+		InitGormDB,
+		gormModel.ModelSet,
+		//InitMongoDB,
 		// mongoModel.ModelSet,
 		InitAuth,
 		InitCasbin,

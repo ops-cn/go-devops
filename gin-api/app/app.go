@@ -19,7 +19,6 @@ import (
 	"github.com/ops-cn/go-devops/common/thirdparty/captcha"
 	"github.com/ops-cn/go-devops/common/thirdparty/captcha/store"
 	login "github.com/ops-cn/go-devops/gin-api/app/handler/admin"
-	"github.com/ops-cn/go-devops/gin-api/app/injector"
 	// 引入swagger
 	_ "github.com/ops-cn/go-devops/gin-api/app/swagger"
 )
@@ -108,25 +107,25 @@ func Init(ctx context.Context, opts ...Option) (func(), error) {
 	//客户端服务初始化
 	login.Init()
 	// 初始化依赖注入器
-	injector, injectorCleanFunc, err := injector.BuildInjector()
-	if err != nil {
-		return nil, err
-	}
+	//injector, injectorCleanFunc, err := injector.BuildInjector()
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	// 初始化菜单数据
-	if config.C.Menu.Enable && config.C.Menu.Data != "" {
-		err = injector.MenuBll.InitData(ctx, config.C.Menu.Data)
-		if err != nil {
-			return nil, err
-		}
-	}
+	//if config.C.Menu.Enable && config.C.Menu.Data != "" {
+	//	err = injector.MenuBll.InitData(ctx, config.C.Menu.Data)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//}
 
 	// 初始化HTTP服务
 	//httpServerCleanFunc := InitHTTPServer(ctx, injector.Engine)
 
 	return func() {
 		//httpServerCleanFunc()
-		injectorCleanFunc()
+		//injectorCleanFunc()
 		loggerCleanFunc()
 	}, nil
 }
