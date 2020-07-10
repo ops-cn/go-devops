@@ -6,8 +6,8 @@ package injector
 import (
 	// "github.com/ops-cn/go-devops/admin/app/api/mock"
 	"github.com/google/wire"
-	"github.com/ops-cn/go-devops/admin/app/handler"
 	"github.com/ops-cn/go-devops/admin/app/module/adapter"
+	"github.com/ops-cn/go-devops/gin-api/app/handler"
 	// mongoModel "github.com/ops-cn/go-devops/admin/app/model/impl/mongo/model"
 	gormModel "github.com/ops-cn/go-devops/admin/app/model/impl/gorm/model"
 )

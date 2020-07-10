@@ -41,8 +41,8 @@ func (roleMgr *Role) Query(ctx context.Context, req *proto.RoleQueryReq, res *un
 	}
 	pbResult := &proto.RoleQueryResult{}
 	util.StructCopy(pbResult, result)
-	res.Items, _ = ptypes.MarshalAny(pbResult)
-	return nil
+	res.Items, err = ptypes.MarshalAny(pbResult)
+	return err
 }
 
 // Get 查询指定数据
@@ -79,8 +79,8 @@ func (roleMgr *Role) Get(ctx context.Context, req *proto.RoleReq, res *unified.R
 	role.RoleMenus = roleMenus
 	pbRole := &proto.Role{}
 	copier.Copy(pbRole, role)
-	res.Items, _ = ptypes.MarshalAny(pbRole)
-	return nil
+	res.Items, err = ptypes.MarshalAny(pbRole)
+	return err
 }
 
 // QueryRoleMenus 查询角色菜单列表
@@ -123,8 +123,8 @@ func (roleMgr *Role) Create(ctx context.Context, req *proto.Role, res *unified.R
 	pbRole := &proto.Role{
 		ID: newId.ID,
 	}
-	res.Items, _ = ptypes.MarshalAny(pbRole)
-	return nil
+	res.Items, err = ptypes.MarshalAny(pbRole)
+	return err
 }
 func (roleMgr *Role) CreateId(ctx context.Context, item schema.Role) (*schema.IDResult, error) {
 	err := roleMgr.checkName(ctx, item)
@@ -165,41 +165,43 @@ func (roleMgr *Role) checkName(ctx context.Context, item schema.Role) error {
 }
 
 // Update 更新数据
-func (roleMgr *Role) Update(ctx context.Context, id string, item schema.Role) error {
-	oldItem, err := roleMgr.GetRole(ctx, id)
+func (roleMgr *Role) Update(ctx context.Context, req *proto.RoleReq, res *unified.Response) error {
+	role := schema.Role{}
+	copier.Copy(role, req.Role)
+	oldItem, err := roleMgr.GetRole(ctx, req.CurrentID)
 	if err != nil {
 		return err
 	} else if oldItem == nil {
 		return errors.ErrNotFound
-	} else if oldItem.Name != item.Name {
-		err := roleMgr.checkName(ctx, item)
+	} else if oldItem.Name != role.Name {
+		err := roleMgr.checkName(ctx, role)
 		if err != nil {
 			return err
 		}
 	}
 
-	item.ID = oldItem.ID
-	item.Creator = oldItem.Creator
-	item.CreatedAt = oldItem.CreatedAt
+	role.ID = oldItem.ID
+	role.Creator = oldItem.Creator
+	role.CreatedAt = oldItem.CreatedAt
 	err = ExecTrans(ctx, roleMgr.TransModel, func(ctx context.Context) error {
-		addRoleMenus, delRoleMenus := roleMgr.compareRoleMenus(ctx, oldItem.RoleMenus, item.RoleMenus)
+		addRoleMenus, delRoleMenus := roleMgr.compareRoleMenus(ctx, oldItem.RoleMenus, role.RoleMenus)
 		for _, rmItem := range addRoleMenus {
 			rmItem.ID = noworker.NewID()
-			rmItem.RoleID = id
+			rmItem.RoleID = req.CurrentID
 			err := roleMgr.RoleMenuModel.Create(ctx, *rmItem)
 			if err != nil {
 				return err
 			}
 		}
 
-		for _, rmitem := range delRoleMenus {
-			err := roleMgr.RoleMenuModel.Delete(ctx, rmitem.ID)
+		for _, rmItem := range delRoleMenus {
+			err := roleMgr.RoleMenuModel.Delete(ctx, rmItem.ID)
 			if err != nil {
 				return err
 			}
 		}
 
-		return roleMgr.RoleModel.Update(ctx, id, item)
+		return roleMgr.RoleModel.Update(ctx, req.CurrentID, role)
 	})
 	if err != nil {
 		return err
@@ -227,8 +229,8 @@ func (roleMgr *Role) compareRoleMenus(ctx context.Context, oldRoleMenus, newRole
 }
 
 // Delete 删除数据
-func (roleMgr *Role) Delete(ctx context.Context, id string) error {
-	oldItem, err := roleMgr.RoleModel.Get(ctx, id)
+func (roleMgr *Role) Delete(ctx context.Context, req *proto.Role, res *unified.Response) error {
+	oldItem, err := roleMgr.RoleModel.Get(ctx, req.ID)
 	if err != nil {
 		return err
 	} else if oldItem == nil {
@@ -237,7 +239,7 @@ func (roleMgr *Role) Delete(ctx context.Context, id string) error {
 
 	userResult, err := roleMgr.UserModel.Query(ctx, schema.UserQueryParam{
 		PaginationParam: schema.PaginationParam{OnlyCount: true},
-		RoleIDs:         []string{id},
+		RoleIDs:         []string{req.ID},
 	})
 	if err != nil {
 		return err
@@ -246,12 +248,12 @@ func (roleMgr *Role) Delete(ctx context.Context, id string) error {
 	}
 
 	err = ExecTrans(ctx, roleMgr.TransModel, func(ctx context.Context) error {
-		err := roleMgr.RoleMenuModel.DeleteByRoleID(ctx, id)
+		err := roleMgr.RoleMenuModel.DeleteByRoleID(ctx, req.ID)
 		if err != nil {
 			return err
 		}
 
-		return roleMgr.RoleModel.Delete(ctx, id)
+		return roleMgr.RoleModel.Delete(ctx, req.ID)
 	})
 	if err != nil {
 		return err
@@ -262,15 +264,15 @@ func (roleMgr *Role) Delete(ctx context.Context, id string) error {
 }
 
 // UpdateStatus 更新状态
-func (roleMgr *Role) UpdateStatus(ctx context.Context, id string, status int) error {
-	oldItem, err := roleMgr.RoleModel.Get(ctx, id)
+func (roleMgr *Role) UpdateStatus(ctx context.Context, req *proto.Role, res *unified.Response) error {
+	oldItem, err := roleMgr.RoleModel.Get(ctx, req.ID)
 	if err != nil {
 		return err
 	} else if oldItem == nil {
 		return errors.ErrNotFound
 	}
 
-	err = roleMgr.RoleModel.UpdateStatus(ctx, id, status)
+	err = roleMgr.RoleModel.UpdateStatus(ctx, req.ID, int(req.Status))
 	if err != nil {
 		return err
 	}

@@ -34,14 +34,14 @@ func (userMgr *User) Query(ctx context.Context, req *proto.UserQueryReq, res *un
 
 	opts := schema.UserQueryOptions{}
 	copier.Copy(opts, req.UserQueryOptions)
-	result, err := userMgr.UserModel.Query(ctx, param, opts)
+	result, err := userMgr.QueryShow(ctx, param, opts)
 	if err != nil {
 		return err
 	}
 	pbResult := &proto.UserQueryResult{}
 	util.StructCopy(pbResult, result)
-	res.Items, _ = ptypes.MarshalAny(pbResult)
-	return nil
+	res.Items, err = ptypes.MarshalAny(pbResult)
+	return err
 }
 
 // QueryShow 查询显示项数据
@@ -108,8 +108,8 @@ func (userMgr *User) Get(ctx context.Context, req *proto.UserReq, res *unified.R
 	user.UserRoles = userRoleResult.Data
 	pbUser := &proto.User{}
 	copier.Copy(pbUser, user)
-	res.Items, _ = ptypes.MarshalAny(pbUser)
-	return nil
+	res.Items, err = ptypes.MarshalAny(pbUser)
+	return err
 }
 
 // Create 创建数据
@@ -145,35 +145,35 @@ func (userMgr *User) Create(ctx context.Context, req *proto.User, res *unified.R
 	pbUser := &proto.User{
 		ID: newId.ID,
 	}
-	res.Items, _ = ptypes.MarshalAny(pbUser)
-	return nil
+	res.Items, err = ptypes.MarshalAny(pbUser)
+	return err
 }
-func (userMgr *User) CreateID(ctx context.Context, item schema.User) (*schema.IDResult, error) {
-	err := userMgr.checkUserName(ctx, item)
+func (userMgr *User) CreateID(ctx context.Context, user schema.User) (*schema.IDResult, error) {
+	err := userMgr.checkUserName(ctx, user)
 	if err != nil {
 		return nil, err
 	}
 
-	item.Password = util.SHA1HashString(item.Password)
-	item.ID = noworker.NewID()
+	user.Password = util.SHA1HashString(user.Password)
+	user.ID = noworker.NewID()
 	err = ExecTrans(ctx, userMgr.TransModel, func(ctx context.Context) error {
-		for _, urItem := range item.UserRoles {
+		for _, urItem := range user.UserRoles {
 			urItem.ID = noworker.NewID()
-			urItem.UserID = item.ID
+			urItem.UserID = user.ID
 			err := userMgr.UserRoleModel.Create(ctx, *urItem)
 			if err != nil {
 				return err
 			}
 		}
 
-		return userMgr.UserModel.Create(ctx, item)
+		return userMgr.UserModel.Create(ctx, user)
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	LoadCasbinPolicy(ctx, userMgr.Enforcer)
-	return schema.NewIDResult(item.ID), nil
+	return schema.NewIDResult(user.ID), nil
 }
 
 func (userMgr *User) checkUserName(ctx context.Context, item schema.User) error {
@@ -194,47 +194,49 @@ func (userMgr *User) checkUserName(ctx context.Context, item schema.User) error 
 }
 
 // Update 更新数据
-func (userMgr *User) Update(ctx context.Context, id string, item schema.User) error {
-	oldItem, err := userMgr.GetUser(ctx, id)
+func (userMgr *User) Update(ctx context.Context, req *proto.UserReq, res *unified.Response) error {
+	user := schema.User{}
+	copier.Copy(user, req.User)
+	oldItem, err := userMgr.GetUser(ctx, req.CurrentID)
 	if err != nil {
 		return err
 	} else if oldItem == nil {
 		return errors.ErrNotFound
-	} else if oldItem.UserName != item.UserName {
-		err := userMgr.checkUserName(ctx, item)
+	} else if oldItem.UserName != user.UserName {
+		err := userMgr.checkUserName(ctx, user)
 		if err != nil {
 			return err
 		}
 	}
 
-	if item.Password != "" {
-		item.Password = util.SHA1HashString(item.Password)
+	if user.Password != "" {
+		user.Password = util.SHA1HashString(user.Password)
 	} else {
-		item.Password = oldItem.Password
+		user.Password = oldItem.Password
 	}
 
-	item.ID = oldItem.ID
-	item.Creator = oldItem.Creator
-	item.CreatedAt = oldItem.CreatedAt
+	user.ID = oldItem.ID
+	user.Creator = oldItem.Creator
+	user.CreatedAt = oldItem.CreatedAt
 	err = ExecTrans(ctx, userMgr.TransModel, func(ctx context.Context) error {
-		addUserRoles, delUserRoles := userMgr.compareUserRoles(ctx, oldItem.UserRoles, item.UserRoles)
-		for _, rmitem := range addUserRoles {
-			rmitem.ID = noworker.NewID()
-			rmitem.UserID = id
-			err := userMgr.UserRoleModel.Create(ctx, *rmitem)
+		addUserRoles, delUserRoles := userMgr.compareUserRoles(ctx, oldItem.UserRoles, user.UserRoles)
+		for _, rmItem := range addUserRoles {
+			rmItem.ID = noworker.NewID()
+			rmItem.UserID = req.CurrentID
+			err := userMgr.UserRoleModel.Create(ctx, *rmItem)
 			if err != nil {
 				return err
 			}
 		}
 
-		for _, rmitem := range delUserRoles {
-			err := userMgr.UserRoleModel.Delete(ctx, rmitem.ID)
+		for _, rmItem := range delUserRoles {
+			err := userMgr.UserRoleModel.Delete(ctx, rmItem.ID)
 			if err != nil {
 				return err
 			}
 		}
 
-		return userMgr.UserModel.Update(ctx, id, item)
+		return userMgr.UserModel.Update(ctx, req.CurrentID, user)
 	})
 	if err != nil {
 		return err
@@ -263,8 +265,8 @@ func (userMgr *User) compareUserRoles(ctx context.Context, oldUserRoles, newUser
 }
 
 // Delete 删除数据
-func (userMgr *User) Delete(ctx context.Context, id string) error {
-	oldItem, err := userMgr.UserModel.Get(ctx, id)
+func (userMgr *User) Delete(ctx context.Context, req *proto.User, res *unified.Response) error {
+	oldItem, err := userMgr.UserModel.Get(ctx, req.ID)
 	if err != nil {
 		return err
 	} else if oldItem == nil {
@@ -272,12 +274,12 @@ func (userMgr *User) Delete(ctx context.Context, id string) error {
 	}
 
 	err = ExecTrans(ctx, userMgr.TransModel, func(ctx context.Context) error {
-		err := userMgr.UserRoleModel.DeleteByUserID(ctx, id)
+		err := userMgr.UserRoleModel.DeleteByUserID(ctx, req.ID)
 		if err != nil {
 			return err
 		}
 
-		return userMgr.UserModel.Delete(ctx, id)
+		return userMgr.UserModel.Delete(ctx, req.ID)
 	})
 	if err != nil {
 		return err
@@ -288,16 +290,16 @@ func (userMgr *User) Delete(ctx context.Context, id string) error {
 }
 
 // UpdateStatus 更新状态
-func (userMgr *User) UpdateStatus(ctx context.Context, id string, status int) error {
-	oldItem, err := userMgr.UserModel.Get(ctx, id)
+func (userMgr *User) UpdateStatus(ctx context.Context, req *proto.User, res *unified.Response) error {
+	oldItem, err := userMgr.UserModel.Get(ctx, req.ID)
 	if err != nil {
 		return err
 	} else if oldItem == nil {
 		return errors.ErrNotFound
 	}
-	oldItem.Status = status
+	oldItem.Status = int(req.Status)
 
-	err = userMgr.UserModel.UpdateStatus(ctx, id, status)
+	err = userMgr.UserModel.UpdateStatus(ctx, req.ID, int(req.Status))
 	if err != nil {
 		return err
 	}

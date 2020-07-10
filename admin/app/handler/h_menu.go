@@ -114,8 +114,8 @@ func (menuMgr *Menu) Query(ctx context.Context, req *proto.MenuQueryReq, res *un
 	result.Data.FillMenuAction(menuActionResult.Data.ToMenuIDMap())
 	pbResult := &proto.MenuQueryResult{}
 	util.StructCopy(pbResult, result)
-	res.Items, _ = ptypes.MarshalAny(pbResult)
-	return nil
+	res.Items, err = ptypes.MarshalAny(pbResult)
+	return err
 }
 
 // Get 查询指定数据
@@ -152,8 +152,8 @@ func (menuMgr *Menu) Get(ctx context.Context, req *proto.MenuReq, res *unified.R
 	menu.Actions = actions
 	pbMenu := &proto.Menu{}
 	copier.Copy(pbMenu, menu)
-	res.Items, _ = ptypes.MarshalAny(pbMenu)
-	return nil
+	res.Items, err = ptypes.MarshalAny(pbMenu)
+	return err
 }
 
 // QueryActions 查询动作数据
@@ -251,8 +251,8 @@ func (menuMgr *Menu) Create(ctx context.Context, req *proto.Menu, res *unified.R
 	pbMenu := &proto.Menu{
 		ID: newId.ID,
 	}
-	res.Items, _ = ptypes.MarshalAny(pbMenu)
-	return nil
+	res.Items, err = ptypes.MarshalAny(pbMenu)
+	return err
 }
 
 // 创建动作数据

@@ -33,11 +33,12 @@ message Role {
 }
 
 message RoleQueryParam {
-  repeated string ID = 1;
-  string Name = 2;
-  string QueryValue = 3;
-  string UserID = 4;
-  int32  Status = 5;
+  unified.PaginationParam PaginationParam = 1;
+  repeated string IDs = 2;
+  string Name = 3;
+  string QueryValue = 4;
+  string UserID = 5;
+  int32  Status = 6;
 }
 message RoleQueryReq {
   RoleQueryParam RoleQueryParam = 1;

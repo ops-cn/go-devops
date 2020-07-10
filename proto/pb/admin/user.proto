@@ -41,9 +41,9 @@ message User {
 message UserRole {
   string ID = 1;
   // @inject_tag: valid:"user_id"
-  string UserID =2;
+  string UserID = 2;
   // @inject_tag: valid:"role_id"
-  string RoleID =3;
+  string RoleID = 3;
 }
 
 message UserQueryReq {
@@ -58,13 +58,10 @@ message UserReq {
 
 message UserQueryParam {
   unified.PaginationParam PaginationParam = 1;
-  repeated string IDs = 2;
-  string Name = 3;
-  string PrefixParentPath = 4;
-  string QueryValue = 5;
-  string ParentID = 6;
-  int32 ShowStatus = 7;
-  int32 Status = 8;
+  string UserName = 2;
+  string QueryValue = 3;
+  int32 Status = 4;
+  repeated string RoleIDs = 5;
 }
 
 message UserQueryOptions {

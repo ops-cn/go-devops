@@ -58,8 +58,8 @@ func (loginMgr *Login) Verify(ctx context.Context, req *proto.LoginParam, res *u
 		return errors.ErrUserDisable
 	}
 	util.StructCopy(user, item)
-	res.Items, _ = ptypes.MarshalAny(user)
-	return nil
+	res.Items, err = ptypes.MarshalAny(user)
+	return err
 }
 
 /*func (loginService *Login) CheckAndGetUser(ctx context.Context, req *proto.UserLoginInfo, res *unified.Response) error {
@@ -134,9 +134,9 @@ func (loginMgr *Login) GetLoginInfo(ctx context.Context, req *proto.UserLoginInf
 		}
 		info.Roles = roles
 	}
-	res.Items, _ = ptypes.MarshalAny(info)
+	res.Items, err = ptypes.MarshalAny(info)
 
-	return nil
+	return err
 }
 
 // QueryUserMenuTree 查询当前用户的权限菜单树

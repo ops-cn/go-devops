@@ -79,7 +79,7 @@ func SetHandler(server server.Server) (func(), error) {
 	if err != nil {
 		return nil, err
 	}
-	err = adminPB.RegisterLoginHandler(server, injector.LoginAPI)
+	err = adminPB.RegisterLoginMgrHandler(server, injector.LoginAPI)
 	if err != nil {
 		panic(err)
 	}
@@ -125,7 +125,7 @@ func Init(ctx context.Context, opts ...Option) (func(), error) {
 	//InitCaptcha()
 
 	// 初始化依赖注入器
-	//inject, injectorCleanFunc, err = injector.BuildInjector()
+	inject, injectorCleanFunc, err := injector.BuildInjector()
 	if err != nil {
 		return nil, err
 	}
@@ -133,19 +133,19 @@ func Init(ctx context.Context, opts ...Option) (func(), error) {
 		panic(err)
 	}
 	// 初始化菜单数据
-	//if config.C.Menu.Enable && config.C.Menu.Data != "" {
-	//	err = injector.MenuBll.InitData(ctx, config.C.Menu.Data)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//}
+	if config.C.Menu.Enable && config.C.Menu.Data != "" {
+		err = inject.MenuAPI.InitData(ctx, config.C.Menu.Data)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	// 初始化HTTP服务
 	//httpServerCleanFunc := InitHTTPServer(ctx, injector.Engine)
 
 	return func() {
 		//httpServerCleanFunc()
-		//injectorCleanFunc()
+		injectorCleanFunc()
 		loggerCleanFunc()
 	}, nil
 }

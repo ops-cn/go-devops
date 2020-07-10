@@ -78,7 +78,6 @@ message MenuQueryOptions {
   repeated unified.OrderField OrderField = 1;
 }
 
-
 message MenuQueryResult {
   repeated Menu Data = 1;
   unified.PaginationResult PageResult = 2;
